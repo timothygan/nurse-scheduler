@@ -61,12 +61,32 @@ npm run db:studio   # Open Prisma Studio
 ```
 
 ## Architecture Notes
-*To be populated based on research and development*
-- Main entry point: TBD
-- Configuration: TBD
-- Database: TBD
-- Frontend: TBD
-- Backend: TBD
+- **Framework**: Next.js 15 with App Router and Turbopack
+- **Authentication**: NextAuth.js with role-based access control
+- **Database**: SQLite with Prisma ORM, deployed schema with 8 core models
+- **UI Library**: shadcn/ui with Radix UI primitives and Tailwind CSS
+- **State Management**: React Hook Form with Zod validation
+- **Key Feature**: Customizable scheduling periods (not fixed 4-week blocks)
+
+## Phase Completion Tracking
+When phases or major features are completed, document them here with commit info:
+
+### ✅ Phase 2 Complete - Scheduler Interface (Commit: cd7d3f2)
+**Date**: August 30, 2025  
+**Git Summary**: `feat: Complete Phase 2 - Scheduler Interface with Authentication`  
+**Key Achievements**:
+- NextAuth.js authentication with test accounts
+- Customizable scheduling periods (1 week, 2 weeks, 4 weeks, 1 month, custom)
+- Complete database schema with migrations and seeding
+- Scheduler dashboard with statistics and navigation
+- Professional UI with shadcn/ui components
+- Fixed critical requirement: Removed 4-week scheduling assumption
+
+**Test Accounts Created**:
+- Scheduler: `scheduler@hospital.com` / `password123`
+- Nurses: `nurse1@hospital.com`, `nurse2@hospital.com`, `nurse3@hospital.com` / `nurse123`
+
+**Next**: Phase 3 - Nurse preferences interface implementation
 
 ## Development Guidelines
 - Always follow the R.P.E.R. cycle for tasks
