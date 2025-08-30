@@ -17,7 +17,8 @@
       "Read(/var/folders/mj/r7mb0gbj5678z0gd9q2gn7vm0000gn/T/TemporaryItems/NSIRD_screencaptureui_bJOaV3/**)",
       "Bash(node check-users.js)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(node:*)"
     ],
     "deny": [],
     "ask": []

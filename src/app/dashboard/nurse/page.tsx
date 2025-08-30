@@ -1,13 +1,52 @@
 'use client'
 
+import { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
 import { ProtectedRoute } from '@/components/ui/protected-route'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Calendar, Clock, AlertCircle, CheckCircle } from 'lucide-react'
+import { Calendar, Clock, AlertCircle, CheckCircle, Users, FileText } from 'lucide-react'
 import Link from 'next/link'
+import { format } from 'date-fns'
+
+interface SchedulingBlock {
+  id: string
+  name: string
+  startDate: string
+  endDate: string
+  status: string
+  hospital: string
+  createdBy: string
+  hasSubmittedPreferences: boolean
+  submittedAt: string | null
+  flexibilityScore: number | null
+}
 
 export default function NurseDashboard() {
+  const { data: session } = useSession()
+  const [schedulingBlocks, setSchedulingBlocks] = useState<SchedulingBlock[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchSchedulingBlocks = async () => {
+      try {
+        const response = await fetch('/api/scheduling-blocks/available')
+        if (response.ok) {
+          const data = await response.json()
+          setSchedulingBlocks(data.blocks)
+        }
+      } catch (error) {
+        console.error('Error fetching scheduling blocks:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (session?.user) {
+      fetchSchedulingBlocks()
+    }
+  }, [session])
   return (
     <ProtectedRoute requiredRole="NURSE">
       <DashboardLayout>
@@ -30,9 +69,11 @@ export default function NurseDashboard() {
                   <div className="ml-5 w-0 flex-1">
                     <dl>
                       <dt className="text-sm font-medium text-gray-500 truncate">
-                        Current Period
+                        Available Blocks
                       </dt>
-                      <dd className="text-lg font-medium text-gray-900">Week 3/4</dd>
+                      <dd className="text-lg font-medium text-gray-900">
+                        {loading ? '...' : schedulingBlocks.length}
+                      </dd>
                     </dl>
                   </div>
                 </div>
@@ -43,14 +84,16 @@ export default function NurseDashboard() {
               <CardContent className="p-6">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <Clock className="h-8 w-8 text-green-600" />
+                    <CheckCircle className="h-8 w-8 text-green-600" />
                   </div>
                   <div className="ml-5 w-0 flex-1">
                     <dl>
                       <dt className="text-sm font-medium text-gray-500 truncate">
-                        Hours This Period
+                        Submitted
                       </dt>
-                      <dd className="text-lg font-medium text-gray-900">76</dd>
+                      <dd className="text-lg font-medium text-gray-900">
+                        {loading ? '...' : schedulingBlocks.filter(b => b.hasSubmittedPreferences).length}
+                      </dd>
                     </dl>
                   </div>
                 </div>
@@ -66,9 +109,11 @@ export default function NurseDashboard() {
                   <div className="ml-5 w-0 flex-1">
                     <dl>
                       <dt className="text-sm font-medium text-gray-500 truncate">
-                        Preferences Due
+                        Pending
                       </dt>
-                      <dd className="text-lg font-medium text-gray-900">3 days</dd>
+                      <dd className="text-lg font-medium text-gray-900">
+                        {loading ? '...' : schedulingBlocks.filter(b => !b.hasSubmittedPreferences).length}
+                      </dd>
                     </dl>
                   </div>
                 </div>
@@ -79,14 +124,16 @@ export default function NurseDashboard() {
               <CardContent className="p-6">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <CheckCircle className="h-8 w-8 text-purple-600" />
+                    <Users className="h-8 w-8 text-purple-600" />
                   </div>
                   <div className="ml-5 w-0 flex-1">
                     <dl>
                       <dt className="text-sm font-medium text-gray-500 truncate">
-                        Schedule Status
+                        Hospital
                       </dt>
-                      <dd className="text-lg font-medium text-gray-900">Approved</dd>
+                      <dd className="text-lg font-medium text-gray-900">
+                        {schedulingBlocks[0]?.hospital || 'General Hospital'}
+                      </dd>
                     </dl>
                   </div>
                 </div>
@@ -94,48 +141,62 @@ export default function NurseDashboard() {
             </Card>
           </div>
 
-          {/* Quick Actions */}
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Schedule Preferences</CardTitle>
-                <CardDescription>
-                  Submit your preferences for upcoming scheduling blocks
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <Button>
-                    <Calendar className="mr-2 h-4 w-4" />
-                    Submit Preferences
-                  </Button>
+          {/* Available Scheduling Blocks */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Available Scheduling Blocks</CardTitle>
+              <CardDescription>
+                Submit your preferences for upcoming scheduling periods
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="text-center py-8 text-gray-500">
+                  Loading scheduling blocks...
                 </div>
-                <p className="text-sm text-gray-600">
-                  Set your preferred shifts, PTO requests, and no-schedule days for the next scheduling period.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Current Schedule</CardTitle>
-                <CardDescription>
-                  View your current and upcoming shift assignments
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <Button variant="outline">
-                    <Clock className="mr-2 h-4 w-4" />
-                    View Schedule
-                  </Button>
+              ) : schedulingBlocks.length === 0 ? (
+                <div className="text-center py-8">
+                  <Calendar className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                  <h3 className="text-sm font-medium text-gray-900 mb-2">No scheduling blocks available</h3>
+                  <p className="text-sm text-gray-600">
+                    There are currently no open scheduling blocks for preference submission.
+                  </p>
                 </div>
-                <p className="text-sm text-gray-600">
-                  Check your current schedule, upcoming shifts, and any recent changes or updates.
-                </p>
-              </CardContent>
-            </Card>
-          </div>
+              ) : (
+                <div className="space-y-4">
+                  {schedulingBlocks.map((block) => (
+                    <div key={block.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <h3 className="font-medium text-gray-900">{block.name}</h3>
+                          <div className="mt-1 flex items-center space-x-4 text-sm text-gray-600">
+                            <span>{format(new Date(block.startDate), 'MMM d')} - {format(new Date(block.endDate), 'MMM d, yyyy')}</span>
+                            <span>•</span>
+                            <span>Created by {block.createdBy}</span>
+                          </div>
+                          {block.hasSubmittedPreferences && (
+                            <div className="mt-2 flex items-center text-sm text-green-600">
+                              <CheckCircle className="h-4 w-4 mr-1" />
+                              Submitted {block.submittedAt ? format(new Date(block.submittedAt), 'MMM d, yyyy') : ''}
+                              {block.flexibilityScore && ` • Flexibility: ${block.flexibilityScore}/10`}
+                            </div>
+                          )}
+                        </div>
+                        <div className="ml-4">
+                          <Link href={`/dashboard/nurse/preferences/${block.id}`}>
+                            <Button variant={block.hasSubmittedPreferences ? "outline" : "default"}>
+                              <FileText className="mr-2 h-4 w-4" />
+                              {block.hasSubmittedPreferences ? 'Edit Preferences' : 'Submit Preferences'}
+                            </Button>
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </DashboardLayout>
     </ProtectedRoute>
