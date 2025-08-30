@@ -216,6 +216,66 @@ Complex web application for nurse scheduling with two user types (schedulers and
 
 ---
 
+### Task 6: Phase 3 Implementation - Nurse Preferences with Validation
+**Original Prompts**: 
+1. "I'd like to update the UI - it's quite clunky to go in day by day to pick what kind of shift you are, if you're requesting pto, etc. We should be aware of what kind of nurse the user is, and they should just be selecting the days. Furthermore, they should select on a calendar UI what days they're working, what days they are PTO, and what days are no schedule days."
+2. "Now let's make schedules configurable, and on the nurse user page, it should display the requirements and not allow an invalid schedule"
+
+**Key User Feedback**:
+- Original day-by-day interface was "clunky" - needed calendar-based selection
+- Need nurse profile awareness for shift type restrictions
+- Need configurable scheduling rules with validation
+- Requirements should be displayed to nurses
+- Invalid schedules should be prevented from submission
+
+**Major Implementation**:
+1. **Complete UI Redesign**: Replaced clunky day-by-day dropdowns with intuitive calendar interface
+2. **Calendar-Based Selection**: Color-coded preference selection (Blue=Work, Green=PTO, Gray=No Schedule)
+3. **Nurse Profile Integration**: Added /api/nurse/profile endpoint with shift type awareness
+4. **Validation System**: Comprehensive scheduling rules validation with real-time feedback
+5. **Requirements Display**: Visual progress tracking and rule requirements for nurses
+6. **Error Prevention**: Save button disabled when validation fails with clear error messages
+
+**Files Created/Modified**:
+- `src/components/nurse/preference-calendar.tsx` - Calendar UI component with color coding
+- `src/components/nurse/preference-requirements.tsx` - Requirements and validation display
+- `src/lib/scheduling/validation.ts` - Validation logic and rule checking
+- `src/types/scheduling.ts` - Comprehensive scheduling rules structure
+- `src/app/dashboard/nurse/preferences/[blockId]/page.tsx` - Complete redesign with validation
+- `src/app/api/nurse/profile/route.ts` - Nurse profile endpoint for shift types
+
+**Key Technical Features**:
+- Real-time validation against configurable scheduling rules
+- Progress tracking with visual indicators
+- Shift type awareness (DAY/NIGHT/BOTH) from nurse profile
+- Prevention of invalid preference submission
+- Clear error messaging and warnings
+- Professional calendar interface replacing tedious day-by-day selection
+
+**Validation Rules Implemented**:
+- Minimum/maximum shifts per nurse
+- PTO and no-schedule day limits
+- Consecutive day restrictions
+- Weekend limits
+- Blackout date checking
+- Total time-off limits
+- Coverage requirements tracking
+
+**Status**: 🔄 **IN PROGRESS**
+- Core calendar interface and validation system implemented
+- Real-time validation working
+- Requirements display functional
+- Currently fixing runtime errors and completing integration
+
+**Next Steps**:
+- Complete error fixes and testing
+- Add rules configuration UI for schedulers
+- Full end-to-end testing of validation workflow
+
+**Date**: 2025-08-30
+
+---
+
 ## Key Decisions Made
 - Chose to separate memory management into dedicated files rather than embedding in CLAUDE.md
 - Implemented R.P.E. cycle as core workflow methodology

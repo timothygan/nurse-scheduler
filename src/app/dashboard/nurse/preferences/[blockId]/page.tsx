@@ -10,10 +10,13 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Slider } from '@/components/ui/slider'
 import { PreferenceCalendar, type PreferenceType, type DayPreference } from '@/components/nurse/preference-calendar'
-import { Calendar as CalendarIcon, Save, ArrowLeft, Info } from 'lucide-react'
-import { format, parseISO } from 'date-fns'
+import { PreferenceRequirements } from '@/components/nurse/preference-requirements'
+import { Calendar as CalendarIcon, Save, ArrowLeft, Info, AlertCircle } from 'lucide-react'
+import { format, parseISO, differenceInDays } from 'date-fns'
 import { toast } from 'sonner'
 import Link from 'next/link'
+import { SchedulingRules, DEFAULT_SCHEDULING_RULES, ValidationResult } from '@/types/scheduling'
+import { validateNursePreferences } from '@/lib/scheduling/validation'
 
 interface SchedulingBlock {
   id: string
@@ -23,6 +26,7 @@ interface SchedulingBlock {
   status: string
   hospital: string
   createdBy: string
+  rules?: SchedulingRules
 }
 
 interface NurseProfile {
@@ -55,6 +59,14 @@ export default function PreferenceSubmissionPage() {
   const [dayPreferences, setDayPreferences] = useState<DayPreference[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [validation, setValidation] = useState<ValidationResult>({ valid: true, errors: [], warnings: [] })
+  const [stats, setStats] = useState({
+    workDays: 0,
+    ptoDays: 0,
+    noScheduleDays: 0,
+    unassignedDays: 0,
+    totalDays: 0
+  })
 
   useEffect(() => {
     const fetchData = async () => {
@@ -144,9 +156,43 @@ export default function PreferenceSubmissionPage() {
       ptoRequests,
       noScheduleRequests
     }))
+
+    // Update stats and validation if we have scheduling block data
+    if (schedulingBlock) {
+      const totalDays = differenceInDays(parseISO(schedulingBlock.endDate), parseISO(schedulingBlock.startDate)) + 1
+      const workDays = newPreferences.filter(p => p.type === 'WORK').length
+      const ptoDays = newPreferences.filter(p => p.type === 'PTO').length
+      const noScheduleDays = newPreferences.filter(p => p.type === 'NO_SCHEDULE').length
+      const unassignedDays = totalDays - workDays - ptoDays - noScheduleDays
+
+      const newStats = {
+        workDays,
+        ptoDays,
+        noScheduleDays,
+        unassignedDays,
+        totalDays
+      }
+      setStats(newStats)
+
+      // Validate preferences against rules
+      const rules = schedulingBlock.rules || DEFAULT_SCHEDULING_RULES
+      const validationResult = validateNursePreferences(
+        newPreferences,
+        rules,
+        schedulingBlock.startDate,
+        schedulingBlock.endDate
+      )
+      setValidation(validationResult)
+    }
   }
 
   const handleSave = async () => {
+    // Prevent submission if validation fails
+    if (!validation.valid) {
+      toast.error('Please fix all validation errors before saving')
+      return
+    }
+
     setSaving(true)
     try {
       const response = await fetch('/api/nurse-preferences', {
@@ -254,6 +300,15 @@ export default function PreferenceSubmissionPage() {
 
             {/* Side Panel */}
             <div className="space-y-6">
+              {/* Requirements & Validation */}
+              {schedulingBlock && (
+                <PreferenceRequirements
+                  rules={schedulingBlock.rules || DEFAULT_SCHEDULING_RULES}
+                  validation={validation}
+                  stats={stats}
+                />
+              )}
+
               {/* Flexibility Score */}
               <Card>
                 <CardHeader>
@@ -333,9 +388,14 @@ export default function PreferenceSubmissionPage() {
                     Cancel
                   </Button>
                 </Link>
-                <Button onClick={handleSave} disabled={saving} className="flex-1">
+                <Button 
+                  onClick={handleSave} 
+                  disabled={saving || !validation.valid} 
+                  className="flex-1"
+                  variant={validation.valid ? 'default' : 'destructive'}
+                >
                   <Save className="mr-2 h-4 w-4" />
-                  {saving ? 'Saving...' : 'Save Preferences'}
+                  {saving ? 'Saving...' : validation.valid ? 'Save Preferences' : 'Fix Errors First'}
                 </Button>
               </div>
             </div>

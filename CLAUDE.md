@@ -98,6 +98,8 @@ When phases or major features are completed, document them here with commit info
 ## Documentation Requirements
 - **CRITICAL**: Update PROJECT_DESIGN.md immediately when requirements change or assumptions are corrected
 - **CRITICAL**: Log ALL user prompts, decisions, and corrections in MEMORY_BANK.md
+- **CRITICAL**: Update this file (CLAUDE.md) with phase completion details including git commit messages
+- **CRITICAL**: Maintain comprehensive project history tracking all phases, user prompts, and decisions
 - Update FILE_GLOSSARY.md after creating/modifying files
 - Document design decisions and their rationale in real-time
 - Track requirement changes and their impact on architecture
