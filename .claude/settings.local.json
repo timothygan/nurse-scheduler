@@ -6,7 +6,17 @@
       "Bash(npm run build:*)",
       "Bash(npm install:*)",
       "Bash(npx prisma:*)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(npx:*)",
+      "mcp__puppeteer__puppeteer_navigate",
+      "mcp__puppeteer__puppeteer_screenshot",
+      "mcp__browser-tools__getConsoleErrors",
+      "mcp__puppeteer__puppeteer_fill",
+      "mcp__puppeteer__puppeteer_click",
+      "mcp__puppeteer__puppeteer_evaluate",
+      "Read(/var/folders/mj/r7mb0gbj5678z0gd9q2gn7vm0000gn/T/TemporaryItems/NSIRD_screencaptureui_bJOaV3/**)",
+      "Bash(node check-users.js)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []
