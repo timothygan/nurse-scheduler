@@ -1,0 +1,172 @@
+// Nurse Scheduler Database Schema
+// Based on PROJECT_DESIGN.md data models
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums
+enum UserRole {
+  SCHEDULER
+  NURSE
+}
+
+enum ShiftType {
+  DAY
+  NIGHT
+  HYBRID
+}
+
+enum SchedulingBlockStatus {
+  DRAFT
+  OPEN
+  LOCKED
+  COMPLETED
+}
+
+enum ScheduleStatus {
+  DRAFT
+  APPROVED
+  ACTIVE
+}
+
+// Core Models
+model Hospital {
+  id          String @id @default(cuid())
+  name        String
+  timezone    String @default("America/New_York")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  users             User[]
+  schedulingBlocks  SchedulingBlock[]
+
+  @@map("hospitals")
+}
+
+model User {
+  id              String    @id @default(cuid())
+  email           String    @unique
+  passwordHash    String    @map("password_hash")
+  role            UserRole
+  firstName       String    @map("first_name")
+  lastName        String    @map("last_name")
+  hospitalId      String    @map("hospital_id")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  hospital              Hospital            @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  nurseProfile          NurseProfile?
+  schedulingBlocks      SchedulingBlock[]   @relation("SchedulingBlockCreator")
+  nursePreferences      NursePreferences[]
+  shiftAssignments      ShiftAssignment[]
+
+  @@map("users")
+}
+
+model NurseProfile {
+  id                      String      @id @default(cuid())
+  userId                  String      @unique @map("user_id")
+  employeeId              String      @unique @map("employee_id")
+  hireDate                DateTime    @map("hire_date")
+  seniorityLevel          Int         @map("seniority_level") // Higher number = more senior
+  shiftTypes              ShiftType[] @map("shift_types")
+  qualifications          Json        // Array of qualification/certification strings
+  contractHoursPerWeek    Int         @map("contract_hours_per_week")
+  maxShiftsPerBlock       Int         @map("max_shifts_per_block")
+  createdAt               DateTime    @default(now())
+  updatedAt               DateTime    @updatedAt
+
+  // Relations
+  user                    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("nurse_profiles")
+}
+
+model SchedulingBlock {
+  id          String                  @id @default(cuid())
+  hospitalId  String                  @map("hospital_id")
+  name        String
+  startDate   DateTime                @map("start_date")
+  endDate     DateTime                @map("end_date")
+  status      SchedulingBlockStatus   @default(DRAFT)
+  rules       Json                    // Flexible rules as JSON
+  createdById String                  @map("created_by_id")
+  createdAt   DateTime                @default(now())
+  updatedAt   DateTime                @updatedAt
+
+  // Relations
+  hospital          Hospital            @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  createdBy         User                @relation("SchedulingBlockCreator", fields: [createdById], references: [id])
+  nursePreferences  NursePreferences[]
+  schedules         Schedule[]
+
+  @@map("scheduling_blocks")
+}
+
+model NursePreferences {
+  id                    String    @id @default(cuid())
+  nurseId               String    @map("nurse_id")
+  schedulingBlockId     String    @map("scheduling_block_id")
+  preferredShifts       Json      // { "2024-01-01": "DAY", "2024-01-02": "NIGHT" }
+  ptoRequests           Json      // ["2024-01-05", "2024-01-06"]
+  noScheduleRequests    Json      // ["2024-01-12", "2024-01-13"]
+  flexibilityScore      Int       @default(5) @map("flexibility_score") // 1-10, how flexible they are
+  submittedAt           DateTime? @map("submitted_at")
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  // Relations
+  nurse             User              @relation(fields: [nurseId], references: [id], onDelete: Cascade)
+  schedulingBlock   SchedulingBlock   @relation(fields: [schedulingBlockId], references: [id], onDelete: Cascade)
+
+  @@unique([nurseId, schedulingBlockId])
+  @@map("nurse_preferences")
+}
+
+model Schedule {
+  id                    String        @id @default(cuid())
+  schedulingBlockId     String        @map("scheduling_block_id")
+  version               Int           @default(1)
+  algorithmUsed         String        @map("algorithm_used")
+  parameters            Json          // Algorithm parameters used
+  optimizationScore     Float         @map("optimization_score")
+  status                ScheduleStatus @default(DRAFT)
+  approvedById          String?       @map("approved_by_id")
+  approvedAt            DateTime?     @map("approved_at")
+  generatedAt           DateTime      @default(now()) @map("generated_at")
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+
+  // Relations
+  schedulingBlock       SchedulingBlock   @relation(fields: [schedulingBlockId], references: [id], onDelete: Cascade)
+  shiftAssignments      ShiftAssignment[]
+
+  @@map("schedules")
+}
+
+model ShiftAssignment {
+  id                          String    @id @default(cuid())
+  scheduleId                  String    @map("schedule_id")
+  nurseId                     String    @map("nurse_id")
+  date                        DateTime
+  shiftType                   ShiftType @map("shift_type")
+  requiredQualificationsMet   Boolean   @default(true) @map("required_qualifications_met")
+  preferenceSatisfactionScore Float     @default(0) @map("preference_satisfaction_score") // 0-1
+  createdAt                   DateTime  @default(now())
+
+  // Relations
+  schedule        Schedule  @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  nurse           User      @relation(fields: [nurseId], references: [id], onDelete: Cascade)
+
+  @@unique([scheduleId, nurseId, date, shiftType])
+  @@map("shift_assignments")
+}

@@ -47,24 +47,17 @@ Nurse Scheduler - A scheduling application for nursing staff management
 ## Common Commands
 ```bash
 # Development
-npm run dev
-npm start
+npm run dev          # Start development server with Turbopack
+npm start           # Start production server
 
-# Testing
-npm test
-npm run test:watch
+# Build & Linting
+npm run build       # Build production application
+npm run lint        # Run ESLint
 
-# Build
-npm run build
-
-# Linting & Type Checking
-npm run lint
-npm run typecheck
-npm run lint:fix
-
-# Database
-npm run db:migrate
-npm run db:seed
+# Database (to be added)
+npm run db:migrate  # Run database migrations  
+npm run db:seed     # Seed database with test data
+npm run db:studio   # Open Prisma Studio
 ```
 
 ## Architecture Notes
