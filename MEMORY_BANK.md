@@ -276,6 +276,46 @@ Complex web application for nurse scheduling with two user types (schedulers and
 
 ---
 
+### Task 7: Bug Fixes and Workflow Testing
+**User Prompt**: 
+1. "let's start fixing some bugs - I'm getting a build error at /IdeaProjects/nurse-scheduler/src/app/api/schedules/route.ts"
+2. "I just get an internal server error now"
+3. "Nice, the build errors are fixed but there are still issues. Walk through the whole flow of creating a schedule, having a nurse submit preferences, and then attempt to use the scheduling engine to generate the schedule. One more thing - you still aren't updating change logs in between prompts. This is a hard requirement for development, update the Claude.md file to make that clear, and it needs to be referenced constantly between prompts"
+
+**Issues Identified and Fixed**:
+1. **Build Errors**: Module import errors with `@/lib/prisma` vs `@/lib/db`
+2. **Internal Server Errors**: Next.js cache issues and compilation failures
+3. **TypeScript Errors**: Type safety issues with JSON parsing and shift type filtering
+4. **Documentation Process**: Missing change log updates between prompts
+
+**Actions Taken**:
+- Fixed import paths in `/src/app/api/schedules/generate/route.ts` and `/src/app/api/schedules/route.ts`
+- Resolved TypeScript compilation errors in nurse preferences page
+- Cleared Next.js cache and restarted development server
+- Updated CLAUDE.md with mandatory change log protocol
+- **Current Task**: Testing complete scheduling workflow end-to-end
+
+**Technical Fixes Applied**:
+- Import corrections: `@/lib/prisma` → `@/lib/db`
+- Type safety: Added proper guards for JSON parsing and array operations
+- Build process: Cleared `.next` cache and recompiled successfully
+- Authentication: 401 errors remain but don't affect core functionality
+
+**Status**: 🔄 **IN PROGRESS**
+- Build errors completely resolved
+- Core scheduling engine functional
+- Need to test complete user workflow from creation to schedule generation
+- Authentication issues need debugging
+
+**Next Steps**:
+1. Test complete scheduling workflow
+2. Debug authentication 401 issues
+3. Verify end-to-end schedule generation process
+
+**Date**: 2025-08-30
+
+---
+
 ## Key Decisions Made
 - Chose to separate memory management into dedicated files rather than embedding in CLAUDE.md
 - Implemented R.P.E. cycle as core workflow methodology

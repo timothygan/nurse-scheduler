@@ -96,6 +96,8 @@ When phases or major features are completed, document them here with commit info
 - **Review Phase**: Conduct thorough code review including security, functionality, and style checks
 
 ## Documentation Requirements
+- **MANDATORY**: Update MEMORY_BANK.md BETWEEN EVERY PROMPT with user messages, actions taken, and decisions made
+- **MANDATORY**: Reference MEMORY_BANK.md at start of each response to understand context and avoid redundant work
 - **CRITICAL**: Update PROJECT_DESIGN.md immediately when requirements change or assumptions are corrected
 - **CRITICAL**: Log ALL user prompts, decisions, and corrections in MEMORY_BANK.md
 - **CRITICAL**: Update this file (CLAUDE.md) with phase completion details including git commit messages
@@ -108,3 +110,11 @@ When phases or major features are completed, document them here with commit info
 - Check package.json for available scripts
 - Run linting/typechecking before committing
 - Optimize context usage by leveraging dedicated documentation files
+
+### Change Log Protocol
+**EVERY RESPONSE MUST:**
+1. Start by checking MEMORY_BANK.md for recent context
+2. Log the current user prompt/request in MEMORY_BANK.md
+3. Document all actions taken during the response
+4. Update project status and decisions made
+5. Note any issues encountered and their resolutions

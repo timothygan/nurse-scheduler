@@ -5,7 +5,9 @@ import { apiSuccess, apiError } from '@/lib/api/response'
 
 export async function GET(request: NextRequest) {
   try {
+    console.log('🔍 Debugging scheduling blocks API')
     const user = await requireRole('SCHEDULER')
+    console.log('✅ User role check passed:', (user as any).role)
     const { searchParams } = new URL(request.url)
     const hospitalId = (user as any).hospitalId
 

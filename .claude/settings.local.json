@@ -18,7 +18,9 @@
       "Bash(node check-users.js)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(pkill:*)",
+      "mcp__browser-tools__getNetworkLogs"
     ],
     "deny": [],
     "ask": []

@@ -29,6 +29,12 @@ export async function GET(
         },
         createdBy: {
           select: { firstName: true, lastName: true }
+        },
+        _count: {
+          select: {
+            nursePreferences: true,
+            schedules: true
+          }
         }
       }
     })
@@ -49,7 +55,8 @@ export async function GET(
       hospital: schedulingBlock.hospital.name,
       createdBy: `${schedulingBlock.createdBy.firstName} ${schedulingBlock.createdBy.lastName}`,
       createdAt: schedulingBlock.createdAt.toISOString(),
-      updatedAt: schedulingBlock.updatedAt.toISOString()
+      updatedAt: schedulingBlock.updatedAt.toISOString(),
+      _count: schedulingBlock._count
     }
 
     return NextResponse.json({ block: blockData })

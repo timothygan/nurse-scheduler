@@ -96,25 +96,34 @@ export default function PreferenceSubmissionPage() {
             const converted: DayPreference[] = []
             
             // Add work days
-            Object.entries(preferencesData.preferences.preferredShifts || {}).forEach(([date, shiftType]) => {
-              if (shiftType && shiftType !== 'ANY') {
-                converted.push({
-                  date,
-                  type: 'WORK',
-                  shiftType: shiftType as 'DAY' | 'NIGHT' | 'ANY'
-                })
-              }
-            })
+            const preferredShifts = preferencesData.preferences.preferredShifts || {}
+            if (preferredShifts && typeof preferredShifts === 'object') {
+              Object.entries(preferredShifts).forEach(([date, shiftType]) => {
+                if (shiftType && shiftType !== 'ANY') {
+                  converted.push({
+                    date,
+                    type: 'WORK',
+                    shiftType: shiftType as 'DAY' | 'NIGHT' | 'ANY'
+                  })
+                }
+              })
+            }
             
             // Add PTO days
-            (preferencesData.preferences.ptoRequests || []).forEach((date: string) => {
-              converted.push({ date, type: 'PTO' })
-            })
+            const ptoRequests = preferencesData.preferences.ptoRequests || []
+            if (Array.isArray(ptoRequests)) {
+              ptoRequests.forEach((date: string) => {
+                converted.push({ date, type: 'PTO' })
+              })
+            }
             
             // Add no-schedule days
-            (preferencesData.preferences.noScheduleRequests || []).forEach((date: string) => {
-              converted.push({ date, type: 'NO_SCHEDULE' })
-            })
+            const noScheduleRequests = preferencesData.preferences.noScheduleRequests || []
+            if (Array.isArray(noScheduleRequests)) {
+              noScheduleRequests.forEach((date: string) => {
+                converted.push({ date, type: 'NO_SCHEDULE' })
+              })
+            }
             
             setDayPreferences(converted)
           }
@@ -255,11 +264,27 @@ export default function PreferenceSubmissionPage() {
   }
 
   // Parse shift types from nurse profile (stored as JSON string in SQLite)
-  const availableShiftTypes = nurseProfile?.shiftTypes 
-    ? (typeof nurseProfile.shiftTypes === 'string' 
-        ? JSON.parse(nurseProfile.shiftTypes) 
-        : nurseProfile.shiftTypes) as ('DAY' | 'NIGHT')[]
-    : ['DAY', 'NIGHT']
+  let availableShiftTypes: ('DAY' | 'NIGHT')[] = ['DAY', 'NIGHT']
+  if (nurseProfile?.shiftTypes) {
+    try {
+      const parsedTypes = typeof nurseProfile.shiftTypes === 'string' 
+        ? JSON.parse(nurseProfile.shiftTypes)
+        : nurseProfile.shiftTypes
+      
+      // Filter to only include valid shift types
+      availableShiftTypes = parsedTypes.filter((type: string) => 
+        type === 'DAY' || type === 'NIGHT'
+      )
+      
+      // Fallback to all shift types if none are valid
+      if (availableShiftTypes.length === 0) {
+        availableShiftTypes = ['DAY', 'NIGHT']
+      }
+    } catch (error) {
+      console.warn('Failed to parse shift types:', error)
+      availableShiftTypes = ['DAY', 'NIGHT']
+    }
+  }
 
   return (
     <ProtectedRoute requiredRole="NURSE">
@@ -376,7 +401,7 @@ export default function PreferenceSubmissionPage() {
                     ))}
                   </div>
                   <p className="mt-2 text-sm text-gray-600">
-                    These are the shift types you're qualified for based on your profile.
+                    These are the shift types you&apos;re qualified for based on your profile.
                   </p>
                 </CardContent>
               </Card>
