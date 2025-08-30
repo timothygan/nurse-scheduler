@@ -159,9 +159,11 @@ export default function SchedulingBlocksPage() {
                           <Settings className="h-4 w-4 mr-1" />
                           Configure
                         </Button>
-                        <Button size="sm">
-                          View Details
-                        </Button>
+                        <Link href={`/dashboard/scheduler/blocks/${block.id}`}>
+                          <Button size="sm">
+                            View Details
+                          </Button>
+                        </Link>
                       </div>
                     </div>
                   </CardContent>

@@ -28,7 +28,8 @@ export interface SchedulingRules {
   
   // Distribution Rules
   requireEvenDistribution: boolean // Try to distribute shifts evenly
-  seniorityBias: number           // 0-1, how much to favor senior nurses for preferences
+  enableSeniorityBias: boolean    // Whether to factor in seniority at all
+  seniorityBiasWeight: number     // 0-1, how much to favor senior nurses (only if enabled)
   
   // Validation Messages
   customMessages?: {
@@ -59,7 +60,8 @@ export const DEFAULT_SCHEDULING_RULES: SchedulingRules = {
   requireAlternatingWeekends: false,
   
   requireEvenDistribution: true,
-  seniorityBias: 0.3,
+  enableSeniorityBias: false,
+  seniorityBiasWeight: 0.3,
   
   customMessages: {}
 }
