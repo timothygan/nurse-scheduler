@@ -7,11 +7,11 @@
 
 ## Initial Requirements Analysis (2025-08-30)
 
-### Problem Statement
-Create a web application to help nurse schedulers create nurse schedules for 4-week blocks with complex constraints and preferences.
+### Problem Statement  
+Create a web application to help nurse schedulers create nurse schedules for **customizable scheduling periods** with complex constraints and preferences.
 
 ### Core Complexity Factors
-1. **Scheduling Constraints**: 4-week blocks with variable shift requirements per nurse
+1. **Scheduling Constraints**: **Customizable duration blocks** with variable shift requirements per nurse
 2. **Multiple User Types**: Schedulers (define rules) vs Nurses (submit preferences)
 3. **Flexible Rules**: Different hospitals have different policies (configurable)
 4. **Nurse Attributes**: Seniority, qualifications, shift types (day/night/hybrid)
@@ -19,13 +19,21 @@ Create a web application to help nurse schedulers create nurse schedules for 4-w
 6. **Optimization**: Multiple valid schedules with bias toward seniority
 7. **Conflict Resolution**: Senior nurses get preferences, junior nurses may work no-schedule days
 
+### ⚠️ CRITICAL CORRECTION (2025-08-30)
+**Original Assumption**: All hospitals use 4-week scheduling blocks
+**Corrected Requirement**: Scheduling period duration must be **customizable per hospital**
+- Some hospitals use 1-week, 2-week, 4-week, monthly, or other custom periods
+- Database schema already supports this with flexible startDate/endDate fields
+- UI must accommodate any scheduling period length
+- Rules must adapt to different period durations
+
 ### Key Requirements Identified
 
 #### Scheduler Features
-- Define scheduling blocks (4-week periods)
+- Define scheduling blocks (**customizable duration periods**)
 - Configure hospital-specific rules:
   - Number of shifts required per nurse
-  - Weekend requirements
+  - Weekend requirements  
   - Maximum days per week
   - Qualification matching requirements
 - Review and approve generated schedules
@@ -38,10 +46,10 @@ Create a web application to help nurse schedulers create nurse schedules for 4-w
 - Profile management (qualifications, seniority, shift type preferences)
 
 #### System Features
-- Generate multiple valid schedule combinations
-- Constraint satisfaction with complex rule validation
+- Generate multiple valid schedule combinations for **any scheduling period duration**
+- Constraint satisfaction with complex rule validation that adapts to period length
 - Real-time collaboration between schedulers and nurses
-- Multi-hospital/organization support
+- Multi-hospital/organization support with per-hospital scheduling preferences
 
 ---
 

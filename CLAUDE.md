@@ -74,7 +74,14 @@ npm run db:studio   # Open Prisma Studio
 - **Plan Phase**: Document assumptions and present plan for approval
 - **Execute Phase**: Implement changes according to documented plan
 - **Review Phase**: Conduct thorough code review including security, functionality, and style checks
-- Update MEMORY_BANK.md and FILE_GLOSSARY.md after task completion
+
+## Documentation Requirements
+- **CRITICAL**: Update PROJECT_DESIGN.md immediately when requirements change or assumptions are corrected
+- **CRITICAL**: Log ALL user prompts, decisions, and corrections in MEMORY_BANK.md
+- Update FILE_GLOSSARY.md after creating/modifying files
+- Document design decisions and their rationale in real-time
+- Track requirement changes and their impact on architecture
+- Maintain conversation history for context continuity
 - Use existing patterns and conventions discovered in previous tasks
 - Check package.json for available scripts
 - Run linting/typechecking before committing

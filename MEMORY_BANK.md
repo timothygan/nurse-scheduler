@@ -122,6 +122,45 @@ Complex web application for nurse scheduling with two user types (schedulers and
 
 ---
 
+### Task 4: Phase 2 Planning and Critical Requirements Correction
+**Original Prompt**: "What is your plan for phase 2 before you start executing?" followed by correction about scheduling period assumptions
+
+**Research Conducted**:
+- Reviewed PROJECT_DESIGN.md Phase 2 requirements
+- Analyzed current database schema flexibility
+- Identified Phase 2 deliverables and technical needs
+
+**Critical Error Identified**:
+- **Original Assumption**: All scheduling blocks are fixed 4-week periods
+- **User Correction**: Scheduling periods should be **customizable per hospital** 
+- **Impact**: Affects UI design, rule validation, and algorithm implementation
+
+**Corrected Phase 2 Plan**:
+1. **Authentication System** - NextAuth.js with role-based access
+2. **Scheduler Dashboard** - Protected interface for scheduling management
+3. **Scheduling Block Management** - **Customizable duration periods** (not fixed 4-week)
+4. **Rule Configuration Engine** - Rules that adapt to different period lengths
+5. **Nurse Profile Management** - CRUD interface for nurse data
+
+**Technical Approach**:
+- Date range picker with duration presets (1 week, 2 weeks, 4 weeks, monthly, custom)
+- Period-aware rule validation
+- Database schema already supports flexibility with startDate/endDate
+
+**Key Process Insight**:
+- User emphasized the importance of updating PROJECT_DESIGN.md and MEMORY_BANK.md with ALL decisions and corrections in real-time
+- Added documentation requirements to CLAUDE.md for systematic tracking
+
+**Documentation Updates Made**:
+- ✅ Updated PROJECT_DESIGN.md with scheduling period correction
+- ✅ Added critical correction section with impact analysis  
+- ✅ Updated CLAUDE.md with documentation requirements
+- ✅ This MEMORY_BANK.md entry documenting the conversation
+
+**Date**: 2025-08-30
+
+---
+
 ## Key Decisions Made
 - Chose to separate memory management into dedicated files rather than embedding in CLAUDE.md
 - Implemented R.P.E. cycle as core workflow methodology
