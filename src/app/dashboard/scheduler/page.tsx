@@ -1,13 +1,49 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { ProtectedRoute } from '@/components/ui/protected-route'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Calendar, Users, Settings, Plus, BarChart3 } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+
+interface DashboardStats {
+  activeBlocks: number
+  totalNurses: number
+  pendingSchedules: number
+  coverageRate: number
+}
 
 export default function SchedulerDashboard() {
+  const [stats, setStats] = useState<DashboardStats>({
+    activeBlocks: 0,
+    totalNurses: 0,
+    pendingSchedules: 0,
+    coverageRate: 0
+  })
+  const [loading, setLoading] = useState(true)
+  const router = useRouter()
+
+  useEffect(() => {
+    fetchDashboardStats()
+  }, [])
+
+  const fetchDashboardStats = async () => {
+    try {
+      const response = await fetch('/api/dashboard/stats')
+      if (response.ok) {
+        const data = await response.json()
+        setStats(data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch dashboard stats:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <ProtectedRoute requiredRole="SCHEDULER">
       <DashboardLayout>
@@ -21,7 +57,10 @@ export default function SchedulerDashboard() {
 
           {/* Quick Stats */}
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-            <Card>
+            <Card 
+              className="cursor-pointer transition-all hover:shadow-lg hover:scale-105"
+              onClick={() => router.push('/dashboard/scheduler/blocks')}
+            >
               <CardContent className="p-6">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
@@ -32,14 +71,19 @@ export default function SchedulerDashboard() {
                       <dt className="text-sm font-medium text-gray-500 truncate">
                         Active Blocks
                       </dt>
-                      <dd className="text-lg font-medium text-gray-900">3</dd>
+                      <dd className="text-lg font-medium text-gray-900">
+                        {loading ? '...' : stats.activeBlocks}
+                      </dd>
                     </dl>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card 
+              className="cursor-pointer transition-all hover:shadow-lg hover:scale-105"
+              onClick={() => router.push('/dashboard/scheduler/nurses')}
+            >
               <CardContent className="p-6">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
@@ -50,14 +94,19 @@ export default function SchedulerDashboard() {
                       <dt className="text-sm font-medium text-gray-500 truncate">
                         Total Nurses
                       </dt>
-                      <dd className="text-lg font-medium text-gray-900">24</dd>
+                      <dd className="text-lg font-medium text-gray-900">
+                        {loading ? '...' : stats.totalNurses}
+                      </dd>
                     </dl>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card 
+              className="cursor-pointer transition-all hover:shadow-lg hover:scale-105"
+              onClick={() => router.push('/dashboard/scheduler/blocks?filter=pending')}
+            >
               <CardContent className="p-6">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
@@ -68,14 +117,19 @@ export default function SchedulerDashboard() {
                       <dt className="text-sm font-medium text-gray-500 truncate">
                         Pending Schedules
                       </dt>
-                      <dd className="text-lg font-medium text-gray-900">2</dd>
+                      <dd className="text-lg font-medium text-gray-900">
+                        {loading ? '...' : stats.pendingSchedules}
+                      </dd>
                     </dl>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card 
+              className="cursor-pointer transition-all hover:shadow-lg hover:scale-105"
+              onClick={() => router.push('/dashboard/scheduler/statistics')}
+            >
               <CardContent className="p-6">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
@@ -86,7 +140,9 @@ export default function SchedulerDashboard() {
                       <dt className="text-sm font-medium text-gray-500 truncate">
                         Coverage Rate
                       </dt>
-                      <dd className="text-lg font-medium text-gray-900">94%</dd>
+                      <dd className="text-lg font-medium text-gray-900">
+                        {loading ? '...' : `${stats.coverageRate}%`}
+                      </dd>
                     </dl>
                   </div>
                 </div>

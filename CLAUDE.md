@@ -36,37 +36,55 @@ The following specialized agents are available to handle complex tasks through t
    - Use for: Review phase validation during R.P.E.R. cycle
    - Performs comprehensive testing of all user interactions
 
-### MANDATORY Agent Workflow
+### MANDATORY Agent Orchestration Workflow
 
-**🚨 CRITICAL: ALL tasks must follow this workflow:**
+**🚨 CRITICAL: I AM THE TASK-ORCHESTRATOR - I coordinate ALL agents and manage the R.P.E.R. cycle**
+
+**Agent Hierarchy & Limitations:**
+- ❌ **Sub-agents CANNOT call other sub-agents** - they can only return results to me (the orchestrator)
+- ✅ **I (task-orchestrator) am the ONLY agent that can call other agents**
+- ✅ **I must coordinate ALL inter-agent communication and workflow**
+- ✅ **I am responsible for ALL documentation between agent calls**
+
+**MANDATORY Workflow for ALL tasks:**
 
 ```
-User Request → prompt-optimizer → task-orchestrator → [specialized agents as needed]
+User Request → [I call prompt-optimizer] → [I manage R.P.E.R. cycle] → [I call specialized agents as needed]
 ```
 
-1. **ALWAYS start with prompt-optimizer** to ensure the request is clear and complete
-2. **THEN use task-orchestrator** to manage the R.P.E.R. cycle
-3. **Task-orchestrator will delegate** to appropriate agents:
-   - research-optimizer for Research phase
-   - task-planner for Plan phase  
-   - software-engineer for Execute phase
-   - user-flow-tester for Review phase
+**My Responsibilities as Task-Orchestrator:**
+1. **ALWAYS start by calling prompt-optimizer** to clarify/enhance any ambiguous user requests
+2. **I manage the complete R.P.E.R. cycle** by calling appropriate agents in sequence:
+   - **Research Phase**: I call research-optimizer and document findings
+   - **Plan Phase**: I call task-planner and document the plan
+   - **Execute Phase**: I call software-engineer and document implementation
+   - **Review Phase**: I call user-flow-tester and document test results
+3. **I document ALL inter-agent communications** and decisions made in MEMORY_BANK.md
+4. **I prepare optimized context** for each agent with minimal fluff and maximum relevance
+5. **I synthesize agent outputs** into coherent project progress
+6. **I ensure no agent calls are made without proper documentation**
 
-**Example workflow:**
+**Context Optimization Requirements:**
+- **Before calling any agent**: Document the specific context/findings they need
+- **After agent responses**: Extract key insights and document decisions made
+- **Between agents**: Maintain continuity by passing only relevant information
+- **Minimize fluff**: Each agent should receive only the context they need for their specific task
+
+**Example Corrected Workflow:**
 ```
 User: "Make the dashboard widgets functional"
 ↓
-prompt-optimizer: Clarifies requirements, identifies specific widgets and functionality needed
+I (task-orchestrator) call prompt-optimizer: "Clarify dashboard widget requirements"
 ↓
-task-orchestrator: Manages R.P.E.R. cycle
-  ↓
-  research-optimizer: Analyzes current dashboard implementation
-  ↓
-  task-planner: Creates step-by-step implementation plan
-  ↓
-  software-engineer: Implements the functionality
-  ↓
-  user-flow-tester: Validates all widgets work correctly
+I document optimized requirements and call research-optimizer: "Analyze current dashboard"
+↓
+I document research findings and call task-planner: "Create implementation plan"
+↓
+I document execution plan and call software-engineer: "Implement functionality"
+↓
+I document implementation and call user-flow-tester: "Validate widget functionality"
+↓
+I document test results and provide final summary to user
 ```
 
 ### The R.P.E.R. Cycle (Research, Plan, Execute, Review) - MANDATORY
@@ -167,13 +185,33 @@ When phases or major features are completed, document them here with commit info
 - **Execute Phase**: Implement changes according to documented plan
 - **Review Phase**: Conduct thorough code review including security, functionality, and style checks
 
-## Documentation Requirements
+## Documentation Requirements - Task-Orchestrator Responsibilities
+
+**🚨 NON-NEGOTIABLE: Documentation is MANDATORY between ALL agent calls**
+
+### Inter-Agent Documentation Protocol
+**Before calling ANY agent:**
+1. **Document the request context** in MEMORY_BANK.md with timestamp
+2. **Prepare agent-specific context** - extract ONLY what that agent needs
+3. **Log the reason** for calling this specific agent
+4. **Set clear expectations** for what the agent should return
+
+**After EVERY agent response:**
+1. **Extract key insights** and document them immediately in MEMORY_BANK.md
+2. **Document decisions made** based on agent outputs
+3. **Note any issues or blockers** encountered
+4. **Prepare context** for the next agent in the R.P.E.R. cycle
+5. **Update FILE_GLOSSARY.md** if any files were created/modified
+
+### Core Documentation Requirements
 - **MANDATORY**: Update MEMORY_BANK.md BETWEEN EVERY PROMPT with user messages, actions taken, and decisions made
 - **MANDATORY**: Reference MEMORY_BANK.md at start of each response to understand context and avoid redundant work
+- **MANDATORY**: Document ALL agent communications with timestamps and context
 - **CRITICAL**: Update PROJECT_DESIGN.md immediately when requirements change or assumptions are corrected
 - **CRITICAL**: Log ALL user prompts, decisions, and corrections in MEMORY_BANK.md
 - **CRITICAL**: Update this file (CLAUDE.md) with phase completion details including git commit messages
 - **CRITICAL**: Maintain comprehensive project history tracking all phases, user prompts, and decisions
+- **CRITICAL**: Ensure NO agent receives irrelevant context or "fluff"
 - Update FILE_GLOSSARY.md after creating/modifying files
 - Document design decisions and their rationale in real-time
 - Track requirement changes and their impact on architecture
@@ -182,6 +220,12 @@ When phases or major features are completed, document them here with commit info
 - Check package.json for available scripts
 - Run linting/typechecking before committing
 - Optimize context usage by leveraging dedicated documentation files
+
+### Context Optimization Standards
+- **Minimal Context**: Each agent receives ONLY the information needed for their specific task
+- **No Redundancy**: Avoid passing information an agent doesn't need
+- **Clear Scope**: Define exactly what each agent should focus on
+- **Structured Output**: Require agents to return structured, actionable information
 
 ### Change Log Protocol
 **EVERY RESPONSE MUST:**
