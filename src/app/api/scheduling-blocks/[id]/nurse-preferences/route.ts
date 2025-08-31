@@ -59,8 +59,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       transformedPreferences[pref.nurseId] = {
         name: `${pref.nurse.firstName} ${pref.nurse.lastName}`,
         preferredShifts: pref.preferredShifts as Record<string, string>,
-        ptoRequests: pref.ptoRequests as string[],
-        noScheduleRequests: pref.noScheduleRequests as string[],
+        ptoRequests: typeof pref.ptoRequests === 'string' 
+          ? JSON.parse(pref.ptoRequests) 
+          : (pref.ptoRequests as string[] || []),
+        noScheduleRequests: typeof pref.noScheduleRequests === 'string' 
+          ? JSON.parse(pref.noScheduleRequests) 
+          : (pref.noScheduleRequests as string[] || []),
         flexibilityScore: pref.flexibilityScore,
         submittedAt: pref.submittedAt?.toISOString(),
         // Add nurse profile information

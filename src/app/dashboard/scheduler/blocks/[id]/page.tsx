@@ -457,34 +457,35 @@ export default function SchedulingBlockDetailPage() {
     }
   }
 
-  const getShiftPreferencesCount = (preferences: Record<string, string> | string[] | undefined | null) => {
+  const getShiftPreferencesCount = (preferences: Record<string, string> | undefined | null) => {
     const counts = { work: 0, pto: 0, noSchedule: 0, avoid: 0 }
     
     // Safety check: ensure preferences exists
-    if (!preferences) {
+    if (!preferences || typeof preferences !== 'object') {
       return counts
     }
     
-    // Handle array format (for ptoRequests, noScheduleRequests)
-    if (Array.isArray(preferences)) {
-      preferences.forEach(preference => {
-        if (preference === 'work') counts.work++
-        else if (preference === 'pto') counts.pto++
-        else if (preference === 'no-schedule') counts.noSchedule++
-        else if (preference === 'avoid') counts.avoid++
-      })
-    } 
     // Handle object format (for shiftPreferences)
-    else if (typeof preferences === 'object') {
-      Object.values(preferences).forEach(preference => {
-        if (preference === 'work') counts.work++
-        else if (preference === 'pto') counts.pto++
-        else if (preference === 'no-schedule') counts.noSchedule++
-        else if (preference === 'avoid') counts.avoid++
-      })
-    }
+    Object.values(preferences).forEach(preference => {
+      if (preference === 'work') counts.work++
+      else if (preference === 'pto') counts.pto++
+      else if (preference === 'no-schedule') counts.noSchedule++
+      else if (preference === 'avoid') counts.avoid++
+    })
     
     return counts
+  }
+
+  // Separate function to count PTO requests (array format)
+  const getPtoRequestCount = (ptoRequests: string[] | undefined | null) => {
+    if (!Array.isArray(ptoRequests)) return 0
+    return ptoRequests.length
+  }
+
+  // Separate function to count no-schedule requests (array format)
+  const getNoScheduleRequestCount = (noScheduleRequests: string[] | undefined | null) => {
+    if (!Array.isArray(noScheduleRequests)) return 0
+    return noScheduleRequests.length
   }
 
   // Interactive handlers for row selection and expansion
@@ -1168,7 +1169,8 @@ export default function SchedulingBlockDetailPage() {
                           <TableBody>
                             {getFilteredNursePreferences().map(([nurseId, preference]) => {
                               const shiftCounts = getShiftPreferencesCount(preference.shiftPreferences);
-                              const ptoCounts = getShiftPreferencesCount(preference.ptoRequests);
+                              const ptoCount = getPtoRequestCount(preference.ptoRequests);
+                              const noScheduleCount = getNoScheduleRequestCount(preference.noScheduleRequests);
                               const isExpanded = expandedRows.has(nurseId);
                               const isSelected = selectedNurse === nurseId;
                               
@@ -1227,17 +1229,17 @@ export default function SchedulingBlockDetailPage() {
                                     </TableCell>
                                     <TableCell>
                                       <div className="flex flex-wrap gap-1">
-                                        {ptoCounts.pto > 0 && (
+                                        {ptoCount > 0 && (
                                           <Badge variant="default" className="text-xs bg-green-100 text-green-800">
-                                            {ptoCounts.pto} PTO
+                                            {ptoCount} PTO
                                           </Badge>
                                         )}
-                                        {ptoCounts.noSchedule > 0 && (
+                                        {noScheduleCount > 0 && (
                                           <Badge variant="default" className="text-xs bg-gray-100 text-gray-800">
-                                            {ptoCounts.noSchedule} no schedule
+                                            {noScheduleCount} no schedule
                                           </Badge>
                                         )}
-                                        {ptoCounts.pto === 0 && ptoCounts.noSchedule === 0 && (
+                                        {ptoCount === 0 && noScheduleCount === 0 && (
                                           <span className="text-sm text-gray-500">None</span>
                                         )}
                                       </div>
@@ -1289,11 +1291,7 @@ export default function SchedulingBlockDetailPage() {
                                                   Object.entries(preference.shiftPreferences).map(([date, pref]) => (
                                                     <div key={date} className="flex items-center justify-between py-1">
                                                       <span className="text-sm font-medium text-gray-700">
-                                                        {new Date(date).toLocaleDateString('en-US', { 
-                                                          weekday: 'short', 
-                                                          month: 'short', 
-                                                          day: 'numeric' 
-                                                        })}
+                                                        {format(parseISO(date), 'EEE, MMM dd')}
                                                       </span>
                                                       <Badge 
                                                         variant="outline" 
@@ -1321,32 +1319,43 @@ export default function SchedulingBlockDetailPage() {
                                                 PTO & No-Schedule Requests
                                               </h5>
                                               <div className="bg-white rounded-lg border p-4 space-y-3">
-                                                {Object.entries(preference.ptoRequests || {}).length > 0 ? (
-                                                  Object.entries(preference.ptoRequests).map(([date, type]) => (
-                                                    <div key={date} className="flex items-center justify-between py-1">
-                                                      <span className="text-sm font-medium text-gray-700">
-                                                        {new Date(date).toLocaleDateString('en-US', { 
-                                                          weekday: 'short', 
-                                                          month: 'short', 
-                                                          day: 'numeric' 
-                                                        })}
-                                                      </span>
-                                                      <Badge 
-                                                        variant="default"
-                                                        className={
-                                                          type === 'pto' ? 'bg-green-100 text-green-800' :
-                                                          type === 'no-schedule' ? 'bg-gray-100 text-gray-800' :
-                                                          'bg-blue-100 text-blue-800'
-                                                        }
-                                                      >
-                                                        {type === 'pto' ? 'PTO Request' :
-                                                         type === 'no-schedule' ? 'No Schedule' : type}
-                                                      </Badge>
-                                                    </div>
-                                                  ))
-                                                ) : (
-                                                  <p className="text-sm text-gray-500 italic">No PTO or no-schedule requests</p>
-                                                )}
+                                                {/* PTO Requests Section */}
+                                                <div className="space-y-2">
+                                                  <h6 className="text-sm font-semibold text-gray-900">PTO Requests</h6>
+                                                  {Array.isArray(preference.ptoRequests) && preference.ptoRequests.length > 0 ? (
+                                                    preference.ptoRequests.map((date: string, index: number) => (
+                                                      <div key={`pto-${index}`} className="flex items-center justify-between py-1">
+                                                        <span className="text-sm font-medium text-gray-700">
+                                                          {format(parseISO(date), 'EEE, MMM dd, yyyy')}
+                                                        </span>
+                                                        <Badge variant="default" className="bg-green-100 text-green-800">
+                                                          PTO Request
+                                                        </Badge>
+                                                      </div>
+                                                    ))
+                                                  ) : (
+                                                    <p className="text-sm text-gray-500 italic">No PTO requests</p>
+                                                  )}
+                                                </div>
+                                                
+                                                {/* No Schedule Requests Section */}
+                                                <div className="space-y-2">
+                                                  <h6 className="text-sm font-semibold text-gray-900">No Schedule Requests</h6>
+                                                  {Array.isArray(preference.noScheduleRequests) && preference.noScheduleRequests.length > 0 ? (
+                                                    preference.noScheduleRequests.map((date: string, index: number) => (
+                                                      <div key={`no-schedule-${index}`} className="flex items-center justify-between py-1">
+                                                        <span className="text-sm font-medium text-gray-700">
+                                                          {format(parseISO(date), 'EEE, MMM dd, yyyy')}
+                                                        </span>
+                                                        <Badge variant="default" className="bg-gray-100 text-gray-800">
+                                                          No Schedule
+                                                        </Badge>
+                                                      </div>
+                                                    ))
+                                                  ) : (
+                                                    <p className="text-sm text-gray-500 italic">No no-schedule requests</p>
+                                                  )}
+                                                </div>
                                               </div>
                                             </div>
                                           </div>
