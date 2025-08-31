@@ -25,7 +25,9 @@
       "Bash(sqlite3:*)",
       "Read(/var/folders/mj/r7mb0gbj5678z0gd9q2gn7vm0000gn/T/TemporaryItems/NSIRD_screencaptureui_evKjEz/**)",
       "Read(/var/folders/mj/r7mb0gbj5678z0gd9q2gn7vm0000gn/T/TemporaryItems/NSIRD_screencaptureui_OclC7H/**)",
-      "Bash(PORT=3000 npm run dev)"
+      "Bash(PORT=3000 npm run dev)",
+      "Read(/var/folders/mj/r7mb0gbj5678z0gd9q2gn7vm0000gn/T/TemporaryItems/NSIRD_screencaptureui_jMZ6Us/**)",
+      "Read(/var/folders/mj/r7mb0gbj5678z0gd9q2gn7vm0000gn/T/TemporaryItems/NSIRD_screencaptureui_3rTDVI/**)"
     ],
     "deny": [],
     "ask": []

@@ -9,40 +9,35 @@
 
 ### Available AI Agents
 
-The following specialized agents are available to handle complex tasks through the Task tool:
+**🚨 CRITICAL: I AM THE TASK-ORCHESTRATOR**
+
+I am Claude Code, acting as the task-orchestrator that coordinates all specialized agents and manages the R.P.E.R. cycle. The following specialized agents are available for me to call through the Task tool:
 
 1. **prompt-optimizer**: Refines, clarifies, and enhances prompts before execution
    - Use for: Vague or ambiguous user requests that need clarification
    - Ensures prompts are clear, complete, and actionable
 
-2. **task-orchestrator**: Coordinates multiple agents to complete complex tasks using R.P.E.R. cycle
-   - Use for: Multi-phase implementations, comprehensive features, complex debugging
-   - Manages the entire workflow from research through review
-   - Delegates work to appropriate specialized agents
-
-3. **research-optimizer**: Conducts thorough research and prepares optimized context
+2. **research-optimizer**: Conducts thorough research and prepares optimized context
    - Use for: New feature implementations, debugging tasks, understanding existing code
    - Gathers all necessary information before planning begins
 
-4. **task-planner**: Breaks down complex tasks into manageable, sequential steps  
+3. **task-planner**: Breaks down complex tasks into manageable, sequential steps  
    - Use for: Feature implementations, refactoring, migration strategies
    - Creates detailed execution plans with clear phases
 
-5. **software-engineer**: Implements code features, fixes bugs, refactors existing code
+4. **software-engineer**: Implements code features, fixes bugs, refactors existing code
    - Use for: Writing clean, well-documented code following best practices
    - Handles actual implementation of planned features
 
-6. **user-flow-tester**: Tests and validates user flows for implemented features
+5. **user-flow-tester**: Tests and validates user flows for implemented features
    - Use for: Review phase validation during R.P.E.R. cycle
    - Performs comprehensive testing of all user interactions
 
 ### MANDATORY Agent Orchestration Workflow
 
-**🚨 CRITICAL: I AM THE TASK-ORCHESTRATOR - I coordinate ALL agents and manage the R.P.E.R. cycle**
-
 **Agent Hierarchy & Limitations:**
 - ❌ **Sub-agents CANNOT call other sub-agents** - they can only return results to me (the orchestrator)
-- ✅ **I (task-orchestrator) am the ONLY agent that can call other agents**
+- ✅ **I (Claude Code as task-orchestrator) am the ONLY agent that can call other agents**
 - ✅ **I must coordinate ALL inter-agent communication and workflow**
 - ✅ **I am responsible for ALL documentation between agent calls**
 

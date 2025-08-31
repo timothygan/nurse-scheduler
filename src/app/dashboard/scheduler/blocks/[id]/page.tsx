@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter, useParams } from 'next/navigation'
 import { ProtectedRoute } from '@/components/ui/protected-route'
@@ -10,8 +10,11 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Input } from '@/components/ui/input'
 import { 
-  Calendar as CalendarIcon, 
+  Calendar as CalendarIcon,
+  Calendar,
   Users, 
   ArrowLeft, 
   Play, 
@@ -23,7 +26,9 @@ import {
   Clock,
   Check,
   X,
-  Power
+  Power,
+  Search,
+  User
 } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { toast } from 'sonner'
@@ -72,6 +77,43 @@ interface GeneratedSchedule {
   }>
 }
 
+interface NursePreference {
+  id: string
+  nurseName: string
+  nurseEmail: string
+  shiftPreferences: Record<string, string>
+  ptoRequests: string[]
+  noScheduleRequests: string[]
+  flexibilityScore: number
+  submittedAt: string | null
+  status: 'SUBMITTED' | 'PENDING' | 'REVIEWED'
+  seniorityLevel: number
+  contractHoursPerWeek: number
+  maxShiftsPerBlock: number
+  shiftTypes: string[]
+  qualifications: string[]
+  ptoBalance: number
+  hireDate: string
+}
+
+interface NursePreferencesResponse {
+  preferences: Record<string, {
+    name: string
+    preferredShifts: Record<string, string>
+    ptoRequests: string[]
+    noScheduleRequests: string[]
+    flexibilityScore: number
+    submittedAt?: string
+    seniorityLevel: number
+    contractHoursPerWeek: number
+    maxShiftsPerBlock: number
+    shiftTypes: string[]
+    qualifications: string[]
+    ptoBalance: number
+    hireDate: string
+  }>
+}
+
 export default function SchedulingBlockDetailPage() {
   const { data: session } = useSession()
   const router = useRouter()
@@ -89,6 +131,16 @@ export default function SchedulingBlockDetailPage() {
   })
   const [selectedScheduleForDetails, setSelectedScheduleForDetails] = useState<GeneratedSchedule | null>(null)
   const [isScheduleDetailsModalOpen, setIsScheduleDetailsModalOpen] = useState(false)
+
+  // Nurse Preferences State Management
+  const [nursePreferences, setNursePreferences] = useState<Record<string, NursePreferencesResponse['preferences'][string]>>({})
+  const [preferencesLoading, setPreferencesLoading] = useState(false)
+  const [preferencesError, setPreferencesError] = useState<string | null>(null)
+  const [filterStatus, setFilterStatus] = useState<string>('all')
+  const [searchTerm, setSearchTerm] = useState<string>('')
+  // Interactive row selection state
+  const [selectedNurse, setSelectedNurse] = useState<string | null>(null)
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     const fetchData = async () => {
@@ -113,6 +165,37 @@ export default function SchedulingBlockDetailPage() {
     if (session?.user && blockId) {
       fetchData()
     }
+  }, [session, blockId])
+
+  // Separate useEffect for fetching nurse preferences
+  useEffect(() => {
+    const fetchNursePreferences = async () => {
+      if (!session?.user || !blockId) return
+
+      setPreferencesLoading(true)
+      setPreferencesError(null)
+      
+      try {
+        const response = await fetch(`/api/scheduling-blocks/${blockId}/nurse-preferences`)
+        
+        if (response.ok) {
+          const data: NursePreferencesResponse = await response.json()
+          setNursePreferences(data.preferences)
+        } else {
+          const errorData = await response.json()
+          setPreferencesError(errorData.error || 'Failed to load nurse preferences')
+          toast.error('Failed to load nurse preferences')
+        }
+      } catch (error) {
+        console.error('Error fetching nurse preferences:', error)
+        setPreferencesError('Failed to load nurse preferences')
+        toast.error('Failed to load nurse preferences')
+      } finally {
+        setPreferencesLoading(false)
+      }
+    }
+
+    fetchNursePreferences()
   }, [session, blockId])
 
   const fetchSchedules = async () => {
@@ -236,6 +319,191 @@ export default function SchedulingBlockDetailPage() {
     } catch (error) {
       console.error('Error exporting schedule:', error)
       toast.error('Failed to export schedule')
+    }
+  }
+
+  // Export functionality for nurse preferences
+  const handleExportPreferences = (format: 'csv' | 'json' = 'csv') => {
+    try {
+      const filteredPreferences = getFilteredNursePreferences()
+      
+      if (filteredPreferences.length === 0) {
+        toast.error('No data to export')
+        return
+      }
+
+      if (format === 'csv') {
+        // Create CSV content
+        const csvHeaders = [
+          'Nurse Name',
+          'Email', 
+          'Preferred Work Days',
+          'Avoid Days',
+          'Max Shifts Per Week',
+          'PTO Requests',
+          'No Schedule Requests',
+          'Status',
+          'Last Updated'
+        ]
+
+        const csvRows = filteredPreferences.map(([nurseId, preference]) => {
+          const shiftCounts = getShiftPreferencesCount(preference.shiftPreferences)
+          const ptoCounts = getShiftPreferencesCount(preference.ptoRequests)
+          
+          // Extract dates for PTO and no-schedule requests
+          const ptoDatesList = Object.entries(preference.ptoRequests || {})
+            .filter(([, type]) => type === 'pto')
+            .map(([date]) => new Date(date).toLocaleDateString())
+            .join('; ')
+          
+          const noScheduleDatesList = Object.entries(preference.ptoRequests || {})
+            .filter(([, type]) => type === 'no-schedule')
+            .map(([date]) => new Date(date).toLocaleDateString())
+            .join('; ')
+
+          return [
+            `"${preference.name}"`,
+            `"${preference.email}"`,
+            `"${shiftCounts.work} days"`,
+            `"${shiftCounts.avoid} days"`,
+            `"${preference.maxShiftsPerBlock || 'Not specified'}"`,
+            `"${ptoDatesList || 'None'}"`,
+            `"${noScheduleDatesList || 'None'}"`,
+            `"${preference.status === 'submitted' ? 'Submitted' : preference.status === 'draft' ? 'Draft' : 'Not Started'}"`,
+            `"${formatPreferenceDate(preference.submittedAt) || 'Never'}"`
+          ].join(',')
+        })
+
+        const csvContent = [csvHeaders.join(','), ...csvRows].join('\n')
+        
+        // Create and download CSV file
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+        const link = document.createElement('a')
+        
+        // Generate filename with block name and timestamp
+        const timestamp = new Date().toISOString().split('T')[0]
+        const blockName = schedulingBlock?.name?.replace(/[^a-zA-Z0-9]/g, '_') || 'block'
+        const filename = `nurse-preferences_${blockName}_${timestamp}.csv`
+        
+        link.href = URL.createObjectURL(blob)
+        link.download = filename
+        link.click()
+        
+        // Clean up
+        URL.revokeObjectURL(link.href)
+        
+        toast.success(`Exported ${filteredPreferences.length} nurse preferences to ${filename}`)
+      }
+    } catch (error) {
+      console.error('Error exporting nurse preferences:', error)
+      toast.error('Failed to export nurse preferences')
+    }
+  }
+
+  // Helper functions for nurse preferences filtering and formatting
+  const getFilteredNursePreferences = () => {
+    return Object.entries(nursePreferences).filter(([nurseId, preference]) => {
+      // Filter by search term (nurse name)
+      const matchesSearch = searchTerm === '' || 
+        preference.name.toLowerCase().includes(searchTerm.toLowerCase())
+      
+      // Filter by status (for now, all preferences are considered submitted if they have submittedAt)
+      const matchesStatus = filterStatus === 'all' || 
+        (filterStatus === 'submitted' && preference.submittedAt) ||
+        (filterStatus === 'pending' && !preference.submittedAt)
+      
+      return matchesSearch && matchesStatus
+    })
+  }
+
+  const formatPreferenceDate = (dateString: string | undefined) => {
+    if (!dateString) return 'Not submitted'
+    try {
+      return format(parseISO(dateString), 'MMM dd, yyyy')
+    } catch {
+      return 'Invalid date'
+    }
+  }
+
+  // Helper function to determine preference status
+  const getPreferenceStatus = (preference: any) => {
+    if (!preference) return 'notStarted'
+    if (preference.submittedAt) return 'submitted'
+    // If preferences exist but not submitted, consider it draft
+    if (preference.preferredShifts && Object.keys(preference.preferredShifts).length > 0) {
+      return 'draft'
+    }
+    return 'notStarted'
+  }
+
+  // Enhanced statistics calculation function
+  const getPreferencesSummary = () => {
+    const allPreferences = Object.values(nursePreferences)
+    const total = allPreferences.length
+    
+    // Count by status
+    const submitted = allPreferences.filter(p => getPreferenceStatus(p) === 'submitted').length
+    const draft = allPreferences.filter(p => getPreferenceStatus(p) === 'draft').length
+    const notStarted = allPreferences.filter(p => getPreferenceStatus(p) === 'notStarted').length
+    const pending = total - submitted
+    
+    return {
+      total,
+      submitted,
+      draft,
+      notStarted,
+      pending,
+      submissionRate: total > 0 ? Math.round((submitted / total) * 100) : 0
+    }
+  }
+
+  const getShiftPreferencesCount = (preferences: Record<string, string> | string[] | undefined | null) => {
+    const counts = { work: 0, pto: 0, noSchedule: 0, avoid: 0 }
+    
+    // Safety check: ensure preferences exists
+    if (!preferences) {
+      return counts
+    }
+    
+    // Handle array format (for ptoRequests, noScheduleRequests)
+    if (Array.isArray(preferences)) {
+      preferences.forEach(preference => {
+        if (preference === 'work') counts.work++
+        else if (preference === 'pto') counts.pto++
+        else if (preference === 'no-schedule') counts.noSchedule++
+        else if (preference === 'avoid') counts.avoid++
+      })
+    } 
+    // Handle object format (for shiftPreferences)
+    else if (typeof preferences === 'object') {
+      Object.values(preferences).forEach(preference => {
+        if (preference === 'work') counts.work++
+        else if (preference === 'pto') counts.pto++
+        else if (preference === 'no-schedule') counts.noSchedule++
+        else if (preference === 'avoid') counts.avoid++
+      })
+    }
+    
+    return counts
+  }
+
+  // Interactive handlers for row selection and expansion
+  const handleRowClick = (nurseId: string) => {
+    setSelectedNurse(selectedNurse === nurseId ? null : nurseId)
+    
+    const newExpandedRows = new Set(expandedRows)
+    if (expandedRows.has(nurseId)) {
+      newExpandedRows.delete(nurseId)
+    } else {
+      newExpandedRows.add(nurseId)
+    }
+    setExpandedRows(newExpandedRows)
+  }
+
+  const handleKeyDown = (event: React.KeyboardEvent, nurseId: string) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault()
+      handleRowClick(nurseId)
     }
   }
 
@@ -554,18 +822,588 @@ export default function SchedulingBlockDetailPage() {
             </TabsContent>
 
             <TabsContent value="preferences">
-              <Card>
-                <CardContent className="py-12 text-center">
-                  <Users className="mx-auto h-12 w-12 text-gray-400" />
-                  <h3 className="mt-4 text-lg font-medium text-gray-900">Nurse Preferences View</h3>
-                  <p className="mt-2 text-gray-600">
-                    View and manage nurse preference submissions for this scheduling block.
-                  </p>
-                  <p className="mt-1 text-sm text-gray-500">
-                    (Feature coming soon)
-                  </p>
-                </CardContent>
-              </Card>
+              <div className="space-y-6" role="region" aria-labelledby="preferences-heading">
+                {/* Header Section */}
+                <div className="space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                      <h2 id="preferences-heading" className="text-2xl font-bold text-gray-900">Nurse Preferences</h2>
+                      <p className="text-gray-600">View and manage nurse preference submissions for this scheduling block.</p>
+                    </div>
+                    <div className="flex flex-col sm:flex-row gap-2" role="search" aria-label="Search and filter nurse preferences">
+                      <div className="relative">
+                        <label htmlFor="nurse-search" className="sr-only">Search nurse preferences</label>
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" aria-hidden="true" />
+                        <Input
+                          id="nurse-search"
+                          placeholder="Search by nurse name or email..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="pl-10 w-full sm:w-64"
+                          aria-describedby="search-description"
+                        />
+                        <div id="search-description" className="sr-only">
+                          Search through nurse names and email addresses in the preferences list
+                        </div>
+                      </div>
+                      <div>
+                        <label htmlFor="status-filter" className="sr-only">Filter by preference status</label>
+                        <Select value={filterStatus} onValueChange={setFilterStatus}>
+                          <SelectTrigger id="status-filter" className="w-full sm:w-40" aria-describedby="filter-description">
+                            <SelectValue placeholder="Filter by status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Status</SelectItem>
+                            <SelectItem value="submitted">Submitted</SelectItem>
+                            <SelectItem value="draft">Draft</SelectItem>
+                            <SelectItem value="not_started">Not Started</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <div id="filter-description" className="sr-only">
+                          Filter nurse preferences by their submission status
+                        </div>
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => handleExportPreferences('csv')}
+                        disabled={preferencesLoading || getFilteredNursePreferences().length === 0}
+                        className="w-full sm:w-auto"
+                        aria-describedby="export-description"
+                      >
+                        <Download className="mr-2 h-4 w-4" aria-hidden="true" />
+                        Export CSV
+                      </Button>
+                      <div id="export-description" className="sr-only">
+                        Export currently filtered nurse preferences to a CSV file for download
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Enhanced Statistics Cards */}
+                  {!preferencesLoading && !preferencesError && (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4" role="region" aria-labelledby="statistics-heading">
+                      <h3 id="statistics-heading" className="sr-only">Nurse Preferences Statistics</h3>
+                      {/* Total Nurses Card */}
+                      <Card className="relative overflow-hidden hover:shadow-md transition-shadow duration-200 border-l-4 border-l-blue-500">
+                        <CardContent className="p-4 sm:p-6">
+                          <div className="flex items-center justify-between">
+                            <div className="space-y-1">
+                              <div className="text-2xl sm:text-3xl font-bold text-blue-700">
+                                {getPreferencesSummary().total}
+                              </div>
+                              <div className="text-sm font-medium text-gray-700">Total Nurses</div>
+                            </div>
+                            <div className="h-12 w-12 sm:h-14 sm:w-14 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center shadow-sm">
+                              <Users className="h-6 w-6 sm:h-7 sm:w-7 text-blue-700" />
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Submitted Card with Progress */}
+                      <Card className="relative overflow-hidden hover:shadow-md transition-shadow duration-200 border-l-4 border-l-green-500">
+                        <CardContent className="p-4 sm:p-6">
+                          <div className="flex items-center justify-between">
+                            <div className="space-y-1">
+                              <div className="text-2xl sm:text-3xl font-bold text-green-700">
+                                {getPreferencesSummary().submitted}
+                              </div>
+                              <div className="text-sm font-medium text-gray-700">Submitted</div>
+                              <div className="text-xs text-green-700 font-semibold bg-green-50 px-2 py-1 rounded-full inline-block mt-1">
+                                {getPreferencesSummary().submissionRate}% complete
+                              </div>
+                            </div>
+                            <div className="h-12 w-12 sm:h-14 sm:w-14 bg-gradient-to-br from-green-100 to-green-200 rounded-full flex items-center justify-center shadow-sm">
+                              <CheckCircle className="h-6 w-6 sm:h-7 sm:w-7 text-green-700" />
+                            </div>
+                          </div>
+                          <div className="mt-4 w-full bg-gray-200 rounded-full h-2 shadow-inner">
+                            <div 
+                              className="bg-gradient-to-r from-green-500 to-green-600 h-2 rounded-full transition-all duration-500 shadow-sm" 
+                              style={{ width: `${getPreferencesSummary().submissionRate}%` }}
+                            ></div>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Draft Card */}
+                      <Card className="relative overflow-hidden hover:shadow-md transition-shadow duration-200 border-l-4 border-l-amber-500">
+                        <CardContent className="p-4 sm:p-6">
+                          <div className="flex items-center justify-between">
+                            <div className="space-y-1">
+                              <div className="text-2xl sm:text-3xl font-bold text-amber-700">
+                                {getPreferencesSummary().draft}
+                              </div>
+                              <div className="text-sm font-medium text-gray-700">Draft</div>
+                              <div className="text-xs text-amber-700 font-semibold bg-amber-50 px-2 py-1 rounded-full inline-block mt-1">
+                                In progress
+                              </div>
+                            </div>
+                            <div className="h-12 w-12 sm:h-14 sm:w-14 bg-gradient-to-br from-amber-100 to-amber-200 rounded-full flex items-center justify-center shadow-sm">
+                              <Clock className="h-6 w-6 sm:h-7 sm:w-7 text-amber-700" />
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Not Started Card */}
+                      <Card className="relative overflow-hidden hover:shadow-md transition-shadow duration-200 border-l-4 border-l-slate-400">
+                        <CardContent className="p-4 sm:p-6">
+                          <div className="flex items-center justify-between">
+                            <div className="space-y-1">
+                              <div className="text-2xl sm:text-3xl font-bold text-slate-700">
+                                {getPreferencesSummary().notStarted}
+                              </div>
+                              <div className="text-sm font-medium text-gray-700">Not Started</div>
+                              <div className="text-xs text-slate-600 font-semibold bg-slate-50 px-2 py-1 rounded-full inline-block mt-1">
+                                Awaiting input
+                              </div>
+                            </div>
+                            <div className="h-12 w-12 sm:h-14 sm:w-14 bg-gradient-to-br from-slate-100 to-slate-200 rounded-full flex items-center justify-center shadow-sm">
+                              <AlertTriangle className="h-6 w-6 sm:h-7 sm:w-7 text-slate-700" />
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  )}
+                </div>
+
+                {/* Enhanced Loading State with Table Structure Skeleton */}
+                {preferencesLoading && (
+                  <Card>
+                    <CardContent className="p-0">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Nurse</TableHead>
+                            <TableHead>Preferred Shifts</TableHead>
+                            <TableHead>Avoid Shifts</TableHead>
+                            <TableHead>Max Shifts/Week</TableHead>
+                            <TableHead>PTO/No Schedule</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Last Updated</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {[...Array(6)].map((_, i) => (
+                            <TableRow key={i} className="animate-pulse">
+                              {/* Nurse Info Column */}
+                              <TableCell className="font-medium">
+                                <div className="flex items-center gap-2">
+                                  <div className="h-3 w-3 bg-gray-200 rounded animate-pulse"></div>
+                                  <div className="space-y-2">
+                                    <div 
+                                      className="h-4 bg-gray-200 rounded"
+                                      style={{ 
+                                        width: `${80 + Math.random() * 40}px`,
+                                        animationDelay: `${i * 100}ms`
+                                      }}
+                                    ></div>
+                                    <div 
+                                      className="h-3 bg-gray-100 rounded"
+                                      style={{ 
+                                        width: `${100 + Math.random() * 60}px`,
+                                        animationDelay: `${i * 100 + 50}ms`
+                                      }}
+                                    ></div>
+                                  </div>
+                                </div>
+                              </TableCell>
+                              
+                              {/* Preferred Shifts Column */}
+                              <TableCell>
+                                <div className="flex flex-wrap gap-1">
+                                  <div 
+                                    className="h-5 bg-gray-200 rounded-full px-2"
+                                    style={{ 
+                                      width: `${60 + Math.random() * 30}px`,
+                                      animationDelay: `${i * 100 + 100}ms`
+                                    }}
+                                  ></div>
+                                  {Math.random() > 0.5 && (
+                                    <div 
+                                      className="h-5 bg-gray-100 rounded-full px-2"
+                                      style={{ 
+                                        width: `${50 + Math.random() * 25}px`,
+                                        animationDelay: `${i * 100 + 150}ms`
+                                      }}
+                                    ></div>
+                                  )}
+                                </div>
+                              </TableCell>
+                              
+                              {/* Avoid Shifts Column */}
+                              <TableCell>
+                                <div className="flex flex-wrap gap-1">
+                                  {Math.random() > 0.4 && (
+                                    <div 
+                                      className="h-5 bg-gray-200 rounded-full px-2"
+                                      style={{ 
+                                        width: `${55 + Math.random() * 35}px`,
+                                        animationDelay: `${i * 100 + 200}ms`
+                                      }}
+                                    ></div>
+                                  )}
+                                </div>
+                              </TableCell>
+                              
+                              {/* Max Shifts Column */}
+                              <TableCell>
+                                <div 
+                                  className="h-4 bg-gray-200 rounded"
+                                  style={{ 
+                                    width: `${30 + Math.random() * 20}px`,
+                                    animationDelay: `${i * 100 + 250}ms`
+                                  }}
+                                ></div>
+                              </TableCell>
+                              
+                              {/* PTO/No Schedule Column */}
+                              <TableCell>
+                                <div className="flex flex-wrap gap-1">
+                                  {Math.random() > 0.6 && (
+                                    <div 
+                                      className="h-5 bg-green-100 rounded-full px-2"
+                                      style={{ 
+                                        width: `${45 + Math.random() * 25}px`,
+                                        animationDelay: `${i * 100 + 300}ms`
+                                      }}
+                                    ></div>
+                                  )}
+                                  {Math.random() > 0.7 && (
+                                    <div 
+                                      className="h-5 bg-gray-100 rounded-full px-2"
+                                      style={{ 
+                                        width: `${60 + Math.random() * 30}px`,
+                                        animationDelay: `${i * 100 + 350}ms`
+                                      }}
+                                    ></div>
+                                  )}
+                                </div>
+                              </TableCell>
+                              
+                              {/* Status Column */}
+                              <TableCell>
+                                <div 
+                                  className={`h-6 rounded-full px-3 ${
+                                    i % 3 === 0 ? 'bg-green-100' : 
+                                    i % 3 === 1 ? 'bg-yellow-100' : 'bg-gray-100'
+                                  }`}
+                                  style={{ 
+                                    width: `${70 + Math.random() * 20}px`,
+                                    animationDelay: `${i * 100 + 400}ms`
+                                  }}
+                                ></div>
+                              </TableCell>
+                              
+                              {/* Last Updated Column */}
+                              <TableCell>
+                                <div 
+                                  className="h-4 bg-gray-200 rounded"
+                                  style={{ 
+                                    width: `${80 + Math.random() * 30}px`,
+                                    animationDelay: `${i * 100 + 450}ms`
+                                  }}
+                                ></div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Error State */}
+                {preferencesError && (
+                  <Card>
+                    <CardContent className="p-6 text-center">
+                      <AlertTriangle className="mx-auto h-12 w-12 text-red-400" />
+                      <h3 className="mt-4 text-lg font-medium text-gray-900">Error Loading Preferences</h3>
+                      <p className="mt-2 text-gray-600">{preferencesError}</p>
+                      <Button 
+                        onClick={() => window.location.reload()} 
+                        className="mt-4"
+                        variant="outline"
+                      >
+                        Try Again
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Table Content */}
+                {!preferencesLoading && !preferencesError && (
+                  <Card>
+                    <CardContent className="p-0">
+                      {getFilteredNursePreferences().length === 0 ? (
+                        <div className="p-6 text-center">
+                          <Users className="mx-auto h-12 w-12 text-gray-400" />
+                          <h3 className="mt-4 text-lg font-medium text-gray-900">
+                            {searchTerm || filterStatus !== 'all' ? 'No matching preferences found' : 'No nurse preferences yet'}
+                          </h3>
+                          <p className="mt-2 text-gray-600">
+                            {searchTerm || filterStatus !== 'all' 
+                              ? 'Try adjusting your search or filter criteria.' 
+                              : 'Nurses will see their preference submissions here once they start submitting.'}
+                          </p>
+                        </div>
+                      ) : (
+                        <Table role="table" aria-labelledby="preferences-table-caption">
+                          <caption id="preferences-table-caption" className="sr-only">
+                            Nurse preferences table showing {getFilteredNursePreferences().length} nurses with their shift preferences, PTO requests, and submission status. Use Tab to navigate, Enter or Space to expand details.
+                          </caption>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead scope="col">Nurse</TableHead>
+                              <TableHead scope="col">Preferred Shifts</TableHead>
+                              <TableHead scope="col">Avoid Shifts</TableHead>
+                              <TableHead scope="col">Max Shifts/Week</TableHead>
+                              <TableHead scope="col">PTO/No Schedule</TableHead>
+                              <TableHead scope="col">Status</TableHead>
+                              <TableHead scope="col">Last Updated</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {getFilteredNursePreferences().map(([nurseId, preference]) => {
+                              const shiftCounts = getShiftPreferencesCount(preference.shiftPreferences);
+                              const ptoCounts = getShiftPreferencesCount(preference.ptoRequests);
+                              const isExpanded = expandedRows.has(nurseId);
+                              const isSelected = selectedNurse === nurseId;
+                              
+                              return (
+                                <React.Fragment key={nurseId}>
+                                  <TableRow 
+                                    className={`cursor-pointer transition-colors duration-200 hover:bg-gray-50 ${
+                                      isSelected ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
+                                    }`}
+                                    onClick={() => handleRowClick(nurseId)}
+                                    onKeyDown={(e) => handleKeyDown(e, nurseId)}
+                                    tabIndex={0}
+                                    role="button"
+                                    aria-expanded={isExpanded}
+                                    aria-label={`View details for ${preference.name}`}
+                                  >
+                                    <TableCell className="font-medium">
+                                      <div className="flex items-center gap-2">
+                                        <div className={`transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`}>
+                                          <Play className="h-3 w-3 text-gray-400" />
+                                        </div>
+                                        <div>
+                                          <div className="font-medium text-gray-900">{preference.name}</div>
+                                          <div className="text-sm text-gray-500">{nurseId}@hospital.com</div>
+                                        </div>
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="flex flex-wrap gap-1">
+                                        {shiftCounts.work > 0 && (
+                                          <Badge variant="secondary" className="text-xs">
+                                            {shiftCounts.work} work days
+                                          </Badge>
+                                        )}
+                                        {shiftCounts.work === 0 && (
+                                          <span className="text-sm text-gray-500">None specified</span>
+                                        )}
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="flex flex-wrap gap-1">
+                                        {shiftCounts.avoid > 0 && (
+                                          <Badge variant="outline" className="text-xs">
+                                            {shiftCounts.avoid} avoid days
+                                          </Badge>
+                                        )}
+                                        {shiftCounts.avoid === 0 && (
+                                          <span className="text-sm text-gray-500">None specified</span>
+                                        )}
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <span className="text-sm font-medium">
+                                        {preference.maxShiftsPerBlock || 'Not specified'}
+                                      </span>
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="flex flex-wrap gap-1">
+                                        {ptoCounts.pto > 0 && (
+                                          <Badge variant="default" className="text-xs bg-green-100 text-green-800">
+                                            {ptoCounts.pto} PTO
+                                          </Badge>
+                                        )}
+                                        {ptoCounts.noSchedule > 0 && (
+                                          <Badge variant="default" className="text-xs bg-gray-100 text-gray-800">
+                                            {ptoCounts.noSchedule} no schedule
+                                          </Badge>
+                                        )}
+                                        {ptoCounts.pto === 0 && ptoCounts.noSchedule === 0 && (
+                                          <span className="text-sm text-gray-500">None</span>
+                                        )}
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <Badge 
+                                        variant={preference.status === 'submitted' ? 'default' : preference.status === 'draft' ? 'secondary' : 'outline'}
+                                        className={
+                                          preference.status === 'submitted' 
+                                            ? 'bg-green-100 text-green-800' 
+                                            : preference.status === 'draft' 
+                                            ? 'bg-yellow-100 text-yellow-800' 
+                                            : 'bg-gray-100 text-gray-800'
+                                        }
+                                      >
+                                        {preference.status === 'submitted' ? 'Submitted' : 
+                                         preference.status === 'draft' ? 'Draft' : 'Not Started'}
+                                      </Badge>
+                                    </TableCell>
+                                    <TableCell>
+                                      <span className="text-sm text-gray-600">
+                                        {formatPreferenceDate(preference.submittedAt)}
+                                      </span>
+                                    </TableCell>
+                                  </TableRow>
+                                  
+                                  {/* Expandable Row Details */}
+                                  {isExpanded && (
+                                    <TableRow className="bg-gray-50 border-none">
+                                      <TableCell colSpan={7} className="px-6 py-4">
+                                        <div className="space-y-6 animate-in slide-in-from-top-2 duration-200">
+                                          {/* Detailed Information Header */}
+                                          <div className="flex items-center gap-2 pb-3 border-b border-gray-200">
+                                            <User className="h-5 w-5 text-blue-600" />
+                                            <h4 className="text-lg font-semibold text-gray-900">
+                                              {preference.name} - Detailed Preferences
+                                            </h4>
+                                          </div>
+                                          
+                                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                            {/* Shift Preferences Details */}
+                                            <div className="space-y-4">
+                                              <h5 className="font-medium text-gray-900 flex items-center gap-2">
+                                                <Calendar className="h-4 w-4 text-blue-600" />
+                                                Detailed Shift Preferences
+                                              </h5>
+                                              <div className="bg-white rounded-lg border p-4 space-y-3">
+                                                {Object.entries(preference.shiftPreferences || {}).length > 0 ? (
+                                                  Object.entries(preference.shiftPreferences).map(([date, pref]) => (
+                                                    <div key={date} className="flex items-center justify-between py-1">
+                                                      <span className="text-sm font-medium text-gray-700">
+                                                        {new Date(date).toLocaleDateString('en-US', { 
+                                                          weekday: 'short', 
+                                                          month: 'short', 
+                                                          day: 'numeric' 
+                                                        })}
+                                                      </span>
+                                                      <Badge 
+                                                        variant="outline" 
+                                                        className={
+                                                          pref === 'work' ? 'border-blue-300 text-blue-700 bg-blue-50' :
+                                                          pref === 'avoid' ? 'border-red-300 text-red-700 bg-red-50' :
+                                                          'border-gray-300 text-gray-700 bg-gray-50'
+                                                        }
+                                                      >
+                                                        {pref === 'work' ? 'Prefer Work' : 
+                                                         pref === 'avoid' ? 'Avoid' : pref}
+                                                      </Badge>
+                                                    </div>
+                                                  ))
+                                                ) : (
+                                                  <p className="text-sm text-gray-500 italic">No specific shift preferences set</p>
+                                                )}
+                                              </div>
+                                            </div>
+                                            
+                                            {/* PTO and No-Schedule Details */}
+                                            <div className="space-y-4">
+                                              <h5 className="font-medium text-gray-900 flex items-center gap-2">
+                                                <CalendarIcon className="h-4 w-4 text-green-600" />
+                                                PTO & No-Schedule Requests
+                                              </h5>
+                                              <div className="bg-white rounded-lg border p-4 space-y-3">
+                                                {Object.entries(preference.ptoRequests || {}).length > 0 ? (
+                                                  Object.entries(preference.ptoRequests).map(([date, type]) => (
+                                                    <div key={date} className="flex items-center justify-between py-1">
+                                                      <span className="text-sm font-medium text-gray-700">
+                                                        {new Date(date).toLocaleDateString('en-US', { 
+                                                          weekday: 'short', 
+                                                          month: 'short', 
+                                                          day: 'numeric' 
+                                                        })}
+                                                      </span>
+                                                      <Badge 
+                                                        variant="default"
+                                                        className={
+                                                          type === 'pto' ? 'bg-green-100 text-green-800' :
+                                                          type === 'no-schedule' ? 'bg-gray-100 text-gray-800' :
+                                                          'bg-blue-100 text-blue-800'
+                                                        }
+                                                      >
+                                                        {type === 'pto' ? 'PTO Request' :
+                                                         type === 'no-schedule' ? 'No Schedule' : type}
+                                                      </Badge>
+                                                    </div>
+                                                  ))
+                                                ) : (
+                                                  <p className="text-sm text-gray-500 italic">No PTO or no-schedule requests</p>
+                                                )}
+                                              </div>
+                                            </div>
+                                          </div>
+                                          
+                                          {/* Submission Information */}
+                                          <div className="bg-white rounded-lg border p-4 mt-4">
+                                            <h5 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
+                                              <Clock className="h-4 w-4 text-gray-600" />
+                                              Submission Details
+                                            </h5>
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+                                              <div>
+                                                <span className="text-gray-600">Status:</span>
+                                                <div className="mt-1">
+                                                  <Badge 
+                                                    variant={preference.status === 'submitted' ? 'default' : 'secondary'}
+                                                    className={
+                                                      preference.status === 'submitted' 
+                                                        ? 'bg-green-100 text-green-800' 
+                                                        : preference.status === 'draft' 
+                                                        ? 'bg-yellow-100 text-yellow-800' 
+                                                        : 'bg-gray-100 text-gray-800'
+                                                    }
+                                                  >
+                                                    {preference.status === 'submitted' ? 'Submitted' : 
+                                                     preference.status === 'draft' ? 'Draft' : 'Not Started'}
+                                                  </Badge>
+                                                </div>
+                                              </div>
+                                              <div>
+                                                <span className="text-gray-600">Last Updated:</span>
+                                                <div className="mt-1 font-medium text-gray-900">
+                                                  {formatPreferenceDate(preference.submittedAt) || 'Never'}
+                                                </div>
+                                              </div>
+                                              <div>
+                                                <span className="text-gray-600">Max Shifts/Week:</span>
+                                                <div className="mt-1 font-medium text-gray-900">
+                                                  {preference.maxShiftsPerBlock || 'Not specified'}
+                                                </div>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </TableCell>
+                                    </TableRow>
+                                  )}
+                                </React.Fragment>
+                              );
+                            })}
+                          </TableBody>
+                        </Table>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
             </TabsContent>
 
             <TabsContent value="settings">
