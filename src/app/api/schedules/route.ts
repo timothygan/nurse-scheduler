@@ -67,6 +67,9 @@ export async function GET(request: NextRequest) {
       id: schedule.id,
       version: schedule.version,
       optimizationScore: schedule.optimizationScore,
+      status: schedule.status,
+      approvedById: schedule.approvedById,
+      approvedAt: schedule.approvedAt?.toISOString() || null,
       // For now, we'll calculate these scores from optimization score
       // In a real implementation, these would be stored separately
       coverageScore: schedule.optimizationScore * 0.9, // Approximation

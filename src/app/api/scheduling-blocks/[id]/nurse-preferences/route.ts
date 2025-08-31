@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth/config'
 import { prisma } from '@/lib/db'
 
 // GET - Fetch all nurse preferences for a scheduling block (Scheduler only)
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions)
 
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ error: 'Only schedulers can access this endpoint' }, { status: 403 })
     }
 
-    const blockId = params.id
+    const { id: blockId } = await params
 
     if (!blockId) {
       return NextResponse.json({ error: 'Scheduling block ID is required' }, { status: 400 })

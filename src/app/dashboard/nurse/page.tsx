@@ -141,6 +141,37 @@ export default function NurseDashboard() {
             </Card>
           </div>
 
+          {/* My Schedules */}
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                My Schedules
+              </CardTitle>
+              <CardDescription>
+                View your approved and active work schedules
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
+                <div className="flex items-center gap-4">
+                  <div className="p-2 bg-blue-100 rounded-lg">
+                    <FileText className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-medium text-gray-900">View Your Schedules</h3>
+                    <p className="text-sm text-gray-600">See approved and active schedules with calendar view</p>
+                  </div>
+                </div>
+                <Link href="/dashboard/nurse/schedules">
+                  <Button>
+                    View Schedules
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Available Scheduling Blocks */}
           <Card>
             <CardHeader>

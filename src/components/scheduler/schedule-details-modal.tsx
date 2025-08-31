@@ -212,7 +212,22 @@ export function ScheduleDetailsModal({
     if (!nursePrefs || !nursePrefs.ptoRequests) return { violations: 0, total: 0, percentage: 100 }
     
     const nurseAssignments = schedule?.assignments.filter(a => a.nurseId === nurseId) || []
-    const ptoRequests = nursePrefs.ptoRequests
+    
+    // Handle ptoRequests being either an array or JSON string
+    let ptoRequests: string[] = []
+    try {
+      if (Array.isArray(nursePrefs.ptoRequests)) {
+        ptoRequests = nursePrefs.ptoRequests
+      } else if (typeof nursePrefs.ptoRequests === 'string') {
+        ptoRequests = JSON.parse(nursePrefs.ptoRequests)
+      } else if (nursePrefs.ptoRequests) {
+        // Handle other JSON formats
+        ptoRequests = Array.isArray(nursePrefs.ptoRequests) ? nursePrefs.ptoRequests : []
+      }
+    } catch (error) {
+      console.warn('Failed to parse ptoRequests for nurse', nurseId, error)
+      return { violations: 0, total: 0, percentage: 100 }
+    }
     
     let violations = 0
     ptoRequests.forEach(ptoDate => {

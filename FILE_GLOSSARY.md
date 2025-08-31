@@ -61,7 +61,24 @@ This file maintains an up-to-date, high-level index of the project's file struct
 - 🔄 **In Progress** - File is being actively worked on
 - ❓ **Unknown** - File exists but purpose not yet documented
 
+## Recently Modified Files (2025-08-31)
+
+### Critical Bug Fixes - Schedule Details Modal
+- **`src/components/scheduler/schedule-details-modal.tsx`** 🔧 - Fixed ptoRequests.forEach TypeError with safe JSON parsing
+- **`src/components/ui/dialog.tsx`** 🔧 - Fixed modal width constraint for proper max-w-7xl display
+
+### Export System Implementation  
+- **`src/app/api/schedules/[id]/export/route.ts`** ✅ - Scheduler export API (CSV/JSON) - Fixed format variable conflict
+- **`src/app/api/nurse/schedules/export/route.ts`** ✅ - Nurse personal export API - Fixed format variable conflict
+- **`src/app/dashboard/scheduler/blocks/[id]/page.tsx`** 🔧 - Connected export buttons to functional APIs
+- **`src/app/dashboard/nurse/schedules/page.tsx`** ✅ - Nurse schedule viewing with calendar and export
+
+### Schedule Approval System
+- **`src/app/api/schedules/[id]/approval/route.ts`** ✅ - Complete approval workflow (approve/activate/revert)
+- Status progression: DRAFT → APPROVED → ACTIVE with single active constraint
+
 ## Last Updated
+2025-08-31 - Added export system, approval workflow, and critical bug fixes
 2025-08-30 - Initial glossary creation with repository setup files
 
 ---

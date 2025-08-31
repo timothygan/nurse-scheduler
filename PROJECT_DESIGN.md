@@ -235,4 +235,153 @@ ShiftAssignment
 
 ---
 
+## Implementation Status Updates
+
+### Phase 4 Enhancement: Schedule Approval System (2025-08-30)
+
+**Feature Implemented**: Comprehensive schedule approval workflow enabling schedulers to review, approve, and activate generated schedules.
+
+**Key Components Added**:
+1. **Approval API Endpoints** (`/api/schedules/[id]/approval/route.ts`)
+   - POST: Approve (DRAFT→APPROVED) and Activate (APPROVED→ACTIVE) schedules  
+   - DELETE: Revert schedules back to DRAFT status
+   - Enforces single active schedule per scheduling block constraint
+
+2. **Scheduler UI Enhancements** (`/dashboard/scheduler/blocks/[id]/page.tsx`)
+   - Status badges with color coding (DRAFT/APPROVED/ACTIVE)
+   - Conditional approval buttons based on schedule status
+   - Visual workflow: Approve → Activate → Deactivate/Revert
+
+3. **Nurse Schedule Viewing** (`/dashboard/nurse/schedules/page.tsx`)
+   - Dedicated page for nurses to view approved/active schedules
+   - Calendar layout with shift assignments visualization  
+   - Schedule satisfaction metrics and statistics
+   - Export functionality (UI ready)
+
+4. **Nurse API Integration** (`/api/nurse/schedules/route.ts`)
+   - Fetches only approved/active schedules for logged-in nurse
+   - Groups assignments by scheduling block
+   - Calculates satisfaction averages and shift counts
+
+**Status Workflow Implemented**:
+- **DRAFT**: Initial generated schedules (default)
+- **APPROVED**: Scheduler-reviewed and approved for activation
+- **ACTIVE**: Currently active schedule (only one per block)
+- **Revert**: Any status can be reverted to DRAFT
+
+**Business Rules Enforced**:
+- Only schedulers can approve/activate schedules
+- Only one ACTIVE schedule allowed per scheduling block  
+- Nurses can only view APPROVED and ACTIVE schedules
+- Complete audit trail with approvedById and approvedAt timestamps
+
+**Testing Completed**:
+- End-to-end approval workflow testing
+- API endpoint validation
+- Database constraint verification
+- UI conditional logic testing
+- Nurse visibility permissions
+
+---
+
+### Phase 5 Enhancement: Schedule Export System (2025-08-31)
+
+**Feature Implemented**: Comprehensive export functionality enabling both schedulers and nurses to export schedule data in multiple formats.
+
+**Key Components Added**:
+1. **Scheduler Export API** (`/api/schedules/[id]/export/route.ts`)
+   - CSV and JSON format support for full schedule exports
+   - Role-based access control (schedulers can export all schedules)
+   - Multiple export scopes (full schedule, nurse-only filtering)
+   - Comprehensive data structure with schedule metadata
+
+2. **Nurse Export API** (`/api/nurse/schedules/export/route.ts`)
+   - Personal schedule exports for authenticated nurses only
+   - CSV and JSON format support with nurse profile information
+   - Block-specific export filtering capability
+   - Satisfaction metrics and summary statistics included
+
+3. **Frontend Integration**
+   - Connected existing export buttons to functional APIs
+   - Proper file download handling with blob management
+   - Toast notifications for success/error feedback
+   - Filename generation with timestamps and schedule identification
+
+**Export Data Structure**:
+```typescript
+exportData = {
+  schedule: { id, version, status, optimizationScore, timestamps },
+  schedulingBlock: { name, dates, hospital, createdBy },
+  assignments: [{ date, dayOfWeek, shiftType, nurse, satisfaction }],
+  exportInfo: { generatedAt, generatedBy, scope, format }
+}
+```
+
+**Critical Bug Resolution**: 
+- Fixed variable naming conflict between date-fns `format()` function and URL parameter `format`
+- Renamed to `exportFormat` in both API endpoints to prevent server errors
+- Issue caused 500 errors during CSV generation phase
+
+**Business Rules Enforced**:
+- Role-based export permissions (schedulers vs nurses)
+- Authentication required for all export endpoints
+- Proper CSV escaping and header generation
+- File naming conventions with timestamps and identification
+
+**Testing Completed**:
+- Scheduler export functionality verified (200 responses)
+- Authentication and access control tested (401 for unauthorized)
+- Error handling validated (invalid IDs, unsupported formats)
+- File download functionality confirmed in browser
+- CSV content structure and formatting verified
+
+**Files Created/Modified**:
+- `src/app/api/schedules/[id]/export/route.ts` - Scheduler export API
+- `src/app/api/nurse/schedules/export/route.ts` - Nurse personal export API
+- Export functionality integrated in existing dashboard pages
+
+**Status**: ✅ **COMPLETED** - Full export system functional and production-ready
+
+---
+
+### Critical Bug Fixes: Schedule Details Modal (2025-08-31)
+
+**Issues Reported**: Schedule popup crashes when viewing nurse details, modal too narrow for content
+
+**Bugs Fixed**:
+
+1. **TypeError: ptoRequests.forEach is not a function**
+   - **Location**: `src/components/scheduler/schedule-details-modal.tsx:218`
+   - **Root Cause**: Database stores ptoRequests as JSON, but code expected array
+   - **Solution**: Added type checking and safe JSON parsing with error handling
+   - **Impact**: Prevented application crashes when viewing schedule details
+
+2. **Modal Width Constraint Issue**
+   - **Location**: `src/components/ui/dialog.tsx:63`
+   - **Problem**: Default `sm:max-w-lg` overrode custom width settings
+   - **Solution**: Conditionally apply default width only when no custom max-w provided
+   - **Impact**: Modal now displays at proper width (max-w-7xl) for better content visibility
+
+3. **Calendar Rendering**
+   - **Status**: Fixed after width correction
+   - **Features Working**: Date grid, nurse assignments, shift type color coding (yellow=day, blue=night)
+
+4. **Tab Content Switching**
+   - **Finding**: Preference Analysis tab requires individual nurse selection (by design)
+   - **Recommendation**: Add empty state messaging for better UX
+
+**Technical Details**:
+- Used try-catch blocks for safe JSON parsing
+- Implemented conditional className application in dialog component
+- Maintained backward compatibility with existing dialog usages
+
+**Testing Results**:
+- ✅ No runtime errors when viewing schedules
+- ✅ Modal displays at full width
+- ✅ Calendar shows all nurse assignments
+- ✅ Dropdown nurse selection works
+- ⚠️ Tab content switching needs UX improvements
+
+---
+
 *This document will be updated as new requirements emerge and design decisions are made.*

@@ -20,7 +20,10 @@ import {
   Eye,
   CheckCircle,
   AlertTriangle,
-  Clock
+  Clock,
+  Check,
+  X,
+  Power
 } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { toast } from 'sonner'
@@ -49,6 +52,9 @@ interface GeneratedSchedule {
   preferenceScore: number
   fairnessScore: number
   seniorityScore: number
+  status: 'DRAFT' | 'APPROVED' | 'ACTIVE'
+  approvedById?: string | null
+  approvedAt?: string | null
   violations: string[]
   statistics: {
     totalAssignments: number
@@ -157,6 +163,80 @@ export default function SchedulingBlockDetailPage() {
   const handleCloseScheduleDetailsModal = () => {
     setIsScheduleDetailsModalOpen(false)
     setSelectedScheduleForDetails(null)
+  }
+
+  const handleApproveSchedule = async (scheduleId: string, action: 'APPROVE' | 'ACTIVATE') => {
+    try {
+      const response = await fetch(`/api/schedules/${scheduleId}/approval`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action })
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        toast.success(data.message)
+        await fetchSchedules() // Refresh the schedules list
+      } else {
+        toast.error(data.error || 'Failed to process schedule approval')
+      }
+    } catch (error) {
+      console.error('Error processing schedule approval:', error)
+      toast.error('Failed to process schedule approval')
+    }
+  }
+
+  const handleRejectSchedule = async (scheduleId: string, reason?: string) => {
+    try {
+      const response = await fetch(`/api/schedules/${scheduleId}/approval`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason })
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        toast.success(data.message)
+        await fetchSchedules() // Refresh the schedules list
+      } else {
+        toast.error(data.error || 'Failed to reject schedule')
+      }
+    } catch (error) {
+      console.error('Error rejecting schedule:', error)
+      toast.error('Failed to reject schedule')
+    }
+  }
+
+  const handleExportSchedule = async (scheduleId: string, format: 'csv' | 'json' = 'csv') => {
+    try {
+      const response = await fetch(`/api/schedules/${scheduleId}/export?format=${format}`)
+      
+      if (response.ok) {
+        const blob = await response.blob()
+        const contentDisposition = response.headers.get('Content-Disposition')
+        const filename = contentDisposition?.match(/filename="([^"]+)"/)?.[1] || `schedule_export.${format}`
+        
+        // Create download link
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = filename
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        window.URL.revokeObjectURL(url)
+        
+        toast.success('Schedule exported successfully')
+      } else {
+        const errorData = await response.json()
+        toast.error(errorData.error || 'Failed to export schedule')
+      }
+    } catch (error) {
+      console.error('Error exporting schedule:', error)
+      toast.error('Failed to export schedule')
+    }
   }
 
   if (loading) {
@@ -334,6 +414,13 @@ export default function SchedulingBlockDetailPage() {
                         <div className="flex items-center justify-between mb-4">
                           <div className="flex items-center gap-4">
                             <Badge variant="outline">Version {schedule.version}</Badge>
+                            <Badge variant={
+                              schedule.status === 'ACTIVE' ? 'default' : 
+                              schedule.status === 'APPROVED' ? 'secondary' : 
+                              'outline'
+                            }>
+                              {schedule.status}
+                            </Badge>
                             <div className="flex items-center gap-2">
                               <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
                               <span className="text-sm font-medium">
@@ -351,10 +438,60 @@ export default function SchedulingBlockDetailPage() {
                               <Eye className="mr-2 h-4 w-4" />
                               View Details
                             </Button>
-                            <Button variant="outline" size="sm">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleExportSchedule(schedule.id, 'csv')}
+                            >
                               <Download className="mr-2 h-4 w-4" />
                               Export
                             </Button>
+                            
+                            {/* Approval Actions */}
+                            {schedule.status === 'DRAFT' && (
+                              <Button 
+                                size="sm"
+                                onClick={() => handleApproveSchedule(schedule.id, 'APPROVE')}
+                                className="bg-green-600 hover:bg-green-700"
+                              >
+                                <Check className="mr-2 h-4 w-4" />
+                                Approve
+                              </Button>
+                            )}
+                            
+                            {schedule.status === 'APPROVED' && (
+                              <>
+                                <Button 
+                                  size="sm"
+                                  onClick={() => handleApproveSchedule(schedule.id, 'ACTIVATE')}
+                                  className="bg-blue-600 hover:bg-blue-700"
+                                >
+                                  <Power className="mr-2 h-4 w-4" />
+                                  Activate
+                                </Button>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => handleRejectSchedule(schedule.id)}
+                                  className="border-red-300 text-red-700 hover:bg-red-50"
+                                >
+                                  <X className="mr-2 h-4 w-4" />
+                                  Revert
+                                </Button>
+                              </>
+                            )}
+                            
+                            {schedule.status === 'ACTIVE' && (
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleRejectSchedule(schedule.id)}
+                                className="border-red-300 text-red-700 hover:bg-red-50"
+                              >
+                                <X className="mr-2 h-4 w-4" />
+                                Deactivate
+                              </Button>
+                            )}
                           </div>
                         </div>
 
