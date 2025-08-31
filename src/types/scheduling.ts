@@ -23,7 +23,7 @@ export interface SchedulingRules {
   }
   
   // Weekend Rules
-  maxWeekendsPerNurse: number     // Maximum weekend shifts per nurse
+  minWeekendsPerNurse: number     // Minimum weekend shifts per nurse
   requireAlternatingWeekends: boolean // Nurses must alternate weekends
   
   // Distribution Rules
@@ -56,7 +56,7 @@ export const DEFAULT_SCHEDULING_RULES: SchedulingRules = {
     WEEKEND_NIGHT: 2
   },
   
-  maxWeekendsPerNurse: 2,
+  minWeekendsPerNurse: 1,
   requireAlternatingWeekends: false,
   
   requireEvenDistribution: true,

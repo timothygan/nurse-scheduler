@@ -7,33 +7,105 @@
 - **Documentation**: Every action, decision, and output must be documented clearly and concisely.
 - **Efficiency**: Optimize for speed by leveraging existing information and avoiding redundant context processing.
 
-### The R.P.E.R. Cycle (Research, Plan, Execute, Review)
-Before beginning any task, explicitly follow these steps:
+### Available AI Agents
 
-1. **Research**
-   - Consult the Memory Bank for relevant past tasks
-   - Check the File Glossary to understand existing files
-   - Perform necessary external research
-   - State what you have learned
+The following specialized agents are available to handle complex tasks through the Task tool:
 
-2. **Plan**
-   - Formulate a detailed, step-by-step plan based on research
-   - Address user requirements and constraints
-   - Document any assumptions made
-   - Present plan for approval before execution
+1. **prompt-optimizer**: Refines, clarifies, and enhances prompts before execution
+   - Use for: Vague or ambiguous user requests that need clarification
+   - Ensures prompts are clear, complete, and actionable
 
-3. **Execute**
-   - Carry out the plan exactly as documented
-   - If issues arise, halt and update the plan
-   - Provide final output with brief summary
+2. **task-orchestrator**: Coordinates multiple agents to complete complex tasks using R.P.E.R. cycle
+   - Use for: Multi-phase implementations, comprehensive features, complex debugging
+   - Manages the entire workflow from research through review
+   - Delegates work to appropriate specialized agents
 
-4. **Review**
-   - Conduct comprehensive code review of all changes
-   - Verify functionality works as expected (run tests, build, etc.)
-   - Check for security vulnerabilities and best practices
-   - Ensure code follows project style and conventions
-   - Validate performance implications
-   - Document any issues found and remediate before completion
+3. **research-optimizer**: Conducts thorough research and prepares optimized context
+   - Use for: New feature implementations, debugging tasks, understanding existing code
+   - Gathers all necessary information before planning begins
+
+4. **task-planner**: Breaks down complex tasks into manageable, sequential steps  
+   - Use for: Feature implementations, refactoring, migration strategies
+   - Creates detailed execution plans with clear phases
+
+5. **software-engineer**: Implements code features, fixes bugs, refactors existing code
+   - Use for: Writing clean, well-documented code following best practices
+   - Handles actual implementation of planned features
+
+6. **user-flow-tester**: Tests and validates user flows for implemented features
+   - Use for: Review phase validation during R.P.E.R. cycle
+   - Performs comprehensive testing of all user interactions
+
+### MANDATORY Agent Workflow
+
+**🚨 CRITICAL: ALL tasks must follow this workflow:**
+
+```
+User Request → prompt-optimizer → task-orchestrator → [specialized agents as needed]
+```
+
+1. **ALWAYS start with prompt-optimizer** to ensure the request is clear and complete
+2. **THEN use task-orchestrator** to manage the R.P.E.R. cycle
+3. **Task-orchestrator will delegate** to appropriate agents:
+   - research-optimizer for Research phase
+   - task-planner for Plan phase  
+   - software-engineer for Execute phase
+   - user-flow-tester for Review phase
+
+**Example workflow:**
+```
+User: "Make the dashboard widgets functional"
+↓
+prompt-optimizer: Clarifies requirements, identifies specific widgets and functionality needed
+↓
+task-orchestrator: Manages R.P.E.R. cycle
+  ↓
+  research-optimizer: Analyzes current dashboard implementation
+  ↓
+  task-planner: Creates step-by-step implementation plan
+  ↓
+  software-engineer: Implements the functionality
+  ↓
+  user-flow-tester: Validates all widgets work correctly
+```
+
+### The R.P.E.R. Cycle (Research, Plan, Execute, Review) - MANDATORY
+🚨 **CRITICAL**: R.P.E.R. is MANDATORY for ALL tasks. Violation will result in task rejection.
+
+Before beginning any task, explicitly follow ALL steps:
+
+1. **Research** (MANDATORY - Must document findings)
+   - MUST consult MEMORY_BANK.md for relevant past tasks and decisions
+   - MUST check FILE_GLOSSARY.md to understand existing files before opening ANY file
+   - MUST perform necessary external research
+   - MUST state what you have learned in writing before proceeding
+   - MUST identify potential risks, dependencies, and constraints
+
+2. **Plan** (MANDATORY - Must present plan for approval)
+   - MUST formulate a detailed, step-by-step plan based on research
+   - MUST address user requirements and constraints explicitly
+   - MUST document any assumptions made
+   - MUST identify all files to be created/modified
+   - MUST present complete plan for user approval before execution
+   - ❌ **EXECUTION WITHOUT APPROVED PLAN IS FORBIDDEN**
+
+3. **Execute** (MANDATORY - Follow plan exactly)
+   - MUST carry out the plan exactly as documented and approved
+   - MUST halt and update plan if ANY issues arise
+   - MUST update documentation files during execution
+   - MUST provide implementation summary
+
+4. **Review** (MANDATORY - Must test with Puppeteer)
+   - MUST conduct comprehensive code review of all changes
+   - MUST verify functionality works with Puppeteer browser testing
+   - MUST test all user flows and interactions
+   - MUST run linting/typechecking (npm run lint, npm run build, etc.)
+   - MUST check for security vulnerabilities and best practices
+   - MUST ensure code follows project style and conventions
+   - MUST validate performance implications
+   - MUST update MEMORY_BANK.md with results and lessons learned
+   - MUST update FILE_GLOSSARY.md with any new/modified files
+   - ❌ **TASK IS NOT COMPLETE WITHOUT PUPPETEER TESTING**
 
 ## Project Overview
 Nurse Scheduler - A scheduling application for nursing staff management
@@ -119,6 +191,23 @@ When phases or major features are completed, document them here with commit info
 4. **UPDATE STATUS**: Document project status changes and decisions made
 5. **RESOLVE ISSUES**: Note any problems encountered and their solutions
 6. **END**: Complete MEMORY_BANK.md entry before finishing response
+
+### R.P.E.R. Cycle - MANDATORY REVIEW REQUIREMENT
+**THE REVIEW PHASE IS ABSOLUTELY MANDATORY:**
+- Every Execute phase MUST be followed by a Review phase
+- Review phase MUST include end-to-end functionality testing
+- Review phase MUST use Puppeteer for actual browser testing of user flows
+- Review phase MUST test ALL user paths and interactions for the implemented feature
+- Review phase MUST identify and document any bugs or issues
+- NO TASK IS COMPLETE until Review phase validates functionality
+- If bugs are found during Review, return to Execute phase to fix them
+
+**PUPPETEER TESTING REQUIREMENT:**
+- Navigate to the application using mcp__puppeteer__puppeteer_navigate
+- Take screenshots at key steps using mcp__puppeteer__puppeteer_screenshot  
+- Click buttons and interact with forms using mcp__puppeteer__puppeteer_click and mcp__puppeteer__puppeteer_fill
+- Verify that each user flow works completely without errors
+- Document any console errors or visual issues discovered
 
 ### Documentation Enforcement Checklist
 **BEFORE SENDING ANY RESPONSE:**

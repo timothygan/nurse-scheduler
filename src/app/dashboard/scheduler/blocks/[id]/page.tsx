@@ -576,9 +576,18 @@ export default function SchedulingBlockDetailPage() {
                   <p className="mt-2 text-gray-600">
                     Configure scheduling rules and constraints for this block.
                   </p>
-                  <p className="mt-1 text-sm text-gray-500">
-                    (Feature coming soon)
-                  </p>
+                  
+                  <div className="mt-4 space-y-3">
+                    <Link href={`/dashboard/scheduler/rules/${blockId}`}>
+                      <Button variant="outline" className="w-full sm:w-auto">
+                        <Clock className="mr-2 h-4 w-4" />
+                        Configure Scheduling Rules
+                      </Button>
+                    </Link>
+                    <p className="text-sm text-gray-500">
+                      Set hospital-specific rules like shift limits, coverage requirements, and time-off policies.
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>

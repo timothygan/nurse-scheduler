@@ -9,6 +9,7 @@ import { Plus, Calendar, Users, Settings } from 'lucide-react'
 import Link from 'next/link'
 import { format } from 'date-fns'
 import { toast } from 'sonner'
+import { StatusDropdown } from '@/components/scheduler/status-dropdown'
 
 interface SchedulingBlock {
   id: string
@@ -49,6 +50,14 @@ export default function SchedulingBlocksPage() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const handleStatusChange = (blockId: string, newStatus: string) => {
+    setBlocks(blocks.map(block => 
+      block.id === blockId 
+        ? { ...block, status: newStatus }
+        : block
+    ))
   }
 
   const getStatusColor = (status: string) => {
@@ -134,9 +143,11 @@ export default function SchedulingBlocksPage() {
                           <span className="ml-2 text-gray-400">({calculateDuration(block.startDate, block.endDate)})</span>
                         </CardDescription>
                       </div>
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(block.status)}`}>
-                        {block.status.toLowerCase()}
-                      </span>
+                      <StatusDropdown
+                        blockId={block.id}
+                        currentStatus={block.status as any}
+                        onStatusChange={(newStatus) => handleStatusChange(block.id, newStatus)}
+                      />
                     </div>
                   </CardHeader>
                   <CardContent>
@@ -155,10 +166,12 @@ export default function SchedulingBlocksPage() {
                         </div>
                       </div>
                       <div className="flex space-x-2">
-                        <Button variant="outline" size="sm">
-                          <Settings className="h-4 w-4 mr-1" />
-                          Configure
-                        </Button>
+                        <Link href={`/dashboard/scheduler/rules/${block.id}`}>
+                          <Button variant="outline" size="sm">
+                            <Settings className="h-4 w-4 mr-1" />
+                            Configure
+                          </Button>
+                        </Link>
                         <Link href={`/dashboard/scheduler/blocks/${block.id}`}>
                           <Button size="sm">
                             View Details
