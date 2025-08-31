@@ -25,6 +25,7 @@ import {
 import { format, parseISO } from 'date-fns'
 import { toast } from 'sonner'
 import Link from 'next/link'
+import { ScheduleDetailsModal } from '@/components/scheduler/schedule-details-modal'
 
 interface SchedulingBlock {
   id: string
@@ -80,6 +81,8 @@ export default function SchedulingBlockDetailPage() {
     maxIterations: 1000,
     optimizationStrategy: 'balanced' as 'balanced' | 'coverage' | 'preferences' | 'fairness'
   })
+  const [selectedScheduleForDetails, setSelectedScheduleForDetails] = useState<GeneratedSchedule | null>(null)
+  const [isScheduleDetailsModalOpen, setIsScheduleDetailsModalOpen] = useState(false)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -144,6 +147,16 @@ export default function SchedulingBlockDetailPage() {
     } finally {
       setGenerating(false)
     }
+  }
+
+  const handleViewScheduleDetails = (schedule: GeneratedSchedule) => {
+    setSelectedScheduleForDetails(schedule)
+    setIsScheduleDetailsModalOpen(true)
+  }
+
+  const handleCloseScheduleDetailsModal = () => {
+    setIsScheduleDetailsModalOpen(false)
+    setSelectedScheduleForDetails(null)
   }
 
   if (loading) {
@@ -330,7 +343,11 @@ export default function SchedulingBlockDetailPage() {
                           </div>
                           
                           <div className="flex gap-2">
-                            <Button variant="outline" size="sm">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => handleViewScheduleDetails(schedule)}
+                            >
                               <Eye className="mr-2 h-4 w-4" />
                               View Details
                             </Button>
@@ -431,6 +448,17 @@ export default function SchedulingBlockDetailPage() {
           </Tabs>
         </div>
       </DashboardLayout>
+      
+      {/* Schedule Details Modal */}
+      <ScheduleDetailsModal
+        isOpen={isScheduleDetailsModalOpen}
+        onClose={handleCloseScheduleDetailsModal}
+        schedule={selectedScheduleForDetails}
+        blockId={blockId}
+        blockStartDate={schedulingBlock?.startDate || ''}
+        blockEndDate={schedulingBlock?.endDate || ''}
+        blockName={schedulingBlock?.name || ''}
+      />
     </ProtectedRoute>
   )
 }

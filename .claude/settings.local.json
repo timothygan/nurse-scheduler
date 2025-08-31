@@ -20,7 +20,8 @@
       "Bash(git commit:*)",
       "Bash(node:*)",
       "Bash(pkill:*)",
-      "mcp__browser-tools__getNetworkLogs"
+      "mcp__browser-tools__getNetworkLogs",
+      "Read(/var/folders/mj/r7mb0gbj5678z0gd9q2gn7vm0000gn/T/TemporaryItems/NSIRD_screencaptureui_Udicwf/**)"
     ],
     "deny": [],
     "ask": []
