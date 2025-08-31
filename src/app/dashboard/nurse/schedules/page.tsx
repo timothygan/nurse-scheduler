@@ -289,7 +289,7 @@ export default function NurseSchedulesPage() {
                 <Calendar className="mx-auto h-12 w-12 text-gray-400" />
                 <h3 className="mt-4 text-lg font-medium text-gray-900">No active schedules</h3>
                 <p className="mt-2 text-gray-600">
-                  You don't have any approved or active schedules yet.
+                  You don&apos;t have any approved or active schedules yet.
                 </p>
                 <div className="mt-4">
                   <Link href="/dashboard/nurse">

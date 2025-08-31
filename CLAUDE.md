@@ -113,8 +113,24 @@ When phases or major features are completed, document them here with commit info
 
 ### Change Log Protocol
 **EVERY RESPONSE MUST:**
-1. Start by checking MEMORY_BANK.md for recent context
-2. Log the current user prompt/request in MEMORY_BANK.md
-3. Document all actions taken during the response
-4. Update project status and decisions made
-5. Note any issues encountered and their resolutions
+1. **START**: Read MEMORY_BANK.md for recent context
+2. **LOG PROMPT**: Document the user's exact request/prompt in MEMORY_BANK.md immediately
+3. **TRACK ACTIONS**: Log each action taken during the response as it happens
+4. **UPDATE STATUS**: Document project status changes and decisions made
+5. **RESOLVE ISSUES**: Note any problems encountered and their solutions
+6. **END**: Complete MEMORY_BANK.md entry before finishing response
+
+### Documentation Enforcement Checklist
+**BEFORE SENDING ANY RESPONSE:**
+- [ ] MEMORY_BANK.md updated with current user prompt
+- [ ] All actions and decisions logged in real-time
+- [ ] FILE_GLOSSARY.md updated if files created/modified
+- [ ] PROJECT_DESIGN.md updated if requirements changed
+- [ ] CLAUDE.md updated if phases completed
+
+### Documentation Failure Recovery
+**IF DOCUMENTATION WAS MISSED:**
+1. **STOP** current work immediately
+2. **BACKFILL** all missing documentation entries
+3. **TIMESTAMP** all retroactive updates as "[RETROACTIVE - {date}]"
+4. **CONTINUE** with proper documentation workflow

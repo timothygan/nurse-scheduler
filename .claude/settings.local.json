@@ -22,7 +22,8 @@
       "Bash(pkill:*)",
       "mcp__browser-tools__getNetworkLogs",
       "Read(/var/folders/mj/r7mb0gbj5678z0gd9q2gn7vm0000gn/T/TemporaryItems/NSIRD_screencaptureui_Udicwf/**)",
-      "Bash(sqlite3:*)"
+      "Bash(sqlite3:*)",
+      "Read(/var/folders/mj/r7mb0gbj5678z0gd9q2gn7vm0000gn/T/TemporaryItems/NSIRD_screencaptureui_evKjEz/**)"
     ],
     "deny": [],
     "ask": []

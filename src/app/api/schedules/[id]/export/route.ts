@@ -190,7 +190,7 @@ function generateCSV(data: any): string {
     ...rows
   ]
   
-  return allRows.map(row => 
-    row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')
+  return allRows.map((row: any[]) => 
+    row.map((cell: any) => `"${String(cell).replace(/"/g, '""')}"`).join(',')
   ).join('\n')
 }

@@ -377,8 +377,8 @@ export default function SchedulingBlockDetailPage() {
                           </>
                         ) : (
                           <>
-                            <Play className="mr-2 h-4 w-4" />
-                            Generate Schedules
+                            <RefreshCw className="mr-2 h-4 w-4" />
+                            {schedules.length > 0 ? 'Regenerate Schedules' : 'Generate Schedules'}
                           </>
                         )}
                       </Button>
